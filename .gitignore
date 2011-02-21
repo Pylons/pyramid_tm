@@ -1,0 +1,10 @@
+*.egg
+*.egg-info
+*.pyc
+*$py.class
+*.pt.py
+*.txt.py
+*~
+.coverage
+build/
+dist/

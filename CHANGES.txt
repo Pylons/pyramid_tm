@@ -1,0 +1,4 @@
+Next release
+------------
+
+- Initial release, based on repoze.tm2
