@@ -30,6 +30,11 @@ Pyramid project's ``__init__.py``:
 From now on, whenever a new request is setup from an application using
 ``config``, a new transaction is associated with that request.
 
+.. note::
+
+   When the ``repoze.tm`` or ``repoze.tm2`` middleware is in the WSGI
+   pipeline, ``pyramid_tm`` becomes inactive.
+
 :term:`transaction` Usage
 -------------------------
 
@@ -38,8 +43,8 @@ using the ``transaction.begin()`` function.  Once the request has
 finished all of it's works (ie views have finished running), a few checks
 are tested:
 
-  1) Did some other mechanism cause the transaction to become unstable? if so,
-     ``transaction.abort()``.
+  1) Did some a transaction.doom() cause the transaction to become "doomed"?
+     if so, ``transaction.abort()``.
 
   2) Did an exception occur in the underlying code? if so,
      ``transaction.abort()``
@@ -56,7 +61,6 @@ up to third-party code to *join* the active transaction to benefit.
 See `repoze.filesafe <http://pypi.python.org/pypi/repoze.filesafe>`_
 for an example of how files creation can be committed or rolled
 back based on :term:`transaction`.
-
 
 Using A Commit Veto
 -------------------
