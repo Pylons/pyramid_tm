@@ -46,7 +46,7 @@ class TMSubscriber(object):
 
     def process(self, request, response=None):
         if getattr(request, '_transaction_committed', False):
-            return
+            return False
 
         request._transaction_committed = True
         transaction = self.transaction
