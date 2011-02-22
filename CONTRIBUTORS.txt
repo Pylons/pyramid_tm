@@ -89,7 +89,7 @@ List of Contributors
 ====================
 
 The below-signed are contributors to a code repository that is part of the
-project named "pyramid_handlers".  Each below-signed contributor has read,
+project named "pyramid_tm".  Each below-signed contributor has read,
 understand and agrees to the terms above in the section within this document
 entitled "Pylons Project Contributor Agreement" as of the date beside his or
 her name.

@@ -29,9 +29,10 @@ install_requires = [
     ]
 
 
-setup(name='pyramid_handlers',
+setup(name='pyramid_tm',
       version='0.1',
-      description='Pyramid handlers emulate Pylons 1 controllers',
+      description=('A package which allows Pyramid requests to join the '
+                   'active transaction'),
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
         "Intended Audience :: Developers",
