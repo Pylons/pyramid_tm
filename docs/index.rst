@@ -55,7 +55,7 @@ up to third-party code to *join* the active transaction to benefit.
 
 See `repoze.filesafe <http://pypi.python.org/pypi/repoze.filesafe>`_
 for an example of how files creation can be committed or rolled
-back based on :term:`transaction`s.
+back based on :term:`transaction`.
 
 
 Using A Commit Veto
