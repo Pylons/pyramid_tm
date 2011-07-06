@@ -75,8 +75,10 @@ First, define the callback somewhere in your application:
 
    def commit_veto(environ, status, headers):
        for header_name, header_value in headers:
-           if header_name.lower() == 'x-tm-abort':
-               return True
+           if header_name.lower() == 'x-tm':
+               if header_value.lower() == 'commit':
+                   return True
+               return False
        for bad in ('4', '5'):
            if status.startswith(bad):
                return True
@@ -110,9 +112,10 @@ contents.  In the above example, the code would be implemented as a
 "commit_veto" function which lives in the "package" submodule of the "my"
 package.
 
-The exact commit veto implementation shown above as an example is actually
-present in the ``pyramid_tm`` package as ``pyramid_tm.default_commit_veto``
-and used if no other commit_veto is specified.
+A variant of the commit veto implementation shown above as an example is
+actually present in the ``pyramid_tm`` package as
+``pyramid_tm.default_commit_veto`` and is used if no other commit veto is
+specified. It's fairly general, so you needn't implement one yourself.
 
 More Information
 ----------------
