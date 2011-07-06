@@ -4,18 +4,41 @@ import transaction
 
 
 def default_commit_veto(environ, status, headers):
-    '''A commit_veto that will abort the transaction
-    if the status response starts with 4 or 5.  Will also
-    abort if there is a x-tm-abort header.
+    '''When used as a commit veto, the logic in this function will cause the
+    transaction to be committed if:
+
+    - An ``X-Tm`` header with the value ``commit`` exists.
+
+    If an ``X-Tm`` header with the value ``commit`` does not exist, the
+    transaction will be aborted, if:
+
+    - An ``X-Tm`` header with the value ``abort`` (or any value other than
+      ``commit``) exists.
+
+    - An ``X-Tm-Abort`` header exists with any value (for backwards
+      compatability; prefer ``X-Tm=abort`` in new code).
+
+    - The status code starts with ``4`` or ``5``.
+
+    Otherwise the transaction will be committed by default.
     '''
 
+    abort_compat = False
+    for header_name, header_value in headers:
+        header_name = header_name.lower()
+        if header_name == 'x-tm':
+            if header_value.lower() == 'commit':
+                return False
+            return True
+        # x-tm honored before x-tm-abort compatability
+        elif header_name == 'x-tm-abort':
+            abort_compat = True
+    if abort_compat:
+        return True
     for bad in ('4', '5'):
         if status.startswith(bad):
             return True
-
-    for header_name, header_value in headers:
-        if header_name.lower() == 'x-tm-abort':
-            return True
+    return False
 
 
 class TMSubscriber(object):

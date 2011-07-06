@@ -3,18 +3,41 @@ import unittest
 
 class TestDefaultCommitVeto(unittest.TestCase):
 
-    def test_error_response(self):
+    def _callFUT(self, status, headers=()):
         from pyramid_tm import default_commit_veto
+        return default_commit_veto(None, status, headers)
 
-        self.assertTrue(default_commit_veto(None, '400', None))
+    def test_it_true_5XX(self):
+        self.failUnless(self._callFUT('500 Server Error'))
+        self.failUnless(self._callFUT('503 Service Unavailable'))
 
-    def test_header_abort(self):
-        from pyramid_tm import default_commit_veto
+    def test_it_true_4XX(self):
+        self.failUnless(self._callFUT('400 Bad Request'))
+        self.failUnless(self._callFUT('411 Length Required'))
 
-        self.assertTrue(default_commit_veto(None, '100', [
-                    ('foo', 'bar'),
-                    ('x-tm-abort', '1'),
-                    ]))
+    def test_it_false_2XX(self):
+        self.failIf(self._callFUT('200 OK'))
+        self.failIf(self._callFUT('201 Created'))
+
+    def test_it_false_3XX(self):
+        self.failIf(self._callFUT('301 Moved Permanently'))
+        self.failIf(self._callFUT('302 Found'))
+
+    def test_it_true_x_tm_abort_specific(self):
+        self.failUnless(self._callFUT('200 OK', [('X-Tm-Abort', True)]))
+
+    def test_it_false_x_tm_commit(self):
+        self.failIf(self._callFUT('200 OK', [('X-Tm', 'commit')]))
+
+    def test_it_true_x_tm_abort(self):
+        self.failUnless(self._callFUT('200 OK', [('X-Tm', 'abort')]))
+
+    def test_it_true_x_tm_anythingelse(self):
+        self.failUnless(self._callFUT('200 OK', [('X-Tm', '')]))
+
+    def test_x_tm_generic_precedes_x_tm_abort_specific(self):
+        self.failIf(self._callFUT('200 OK', [('X-Tm', 'commit'),
+                                             ('X-Tm-Abort', True)]))
 
 
 class TestTMSubscriber(unittest.TestCase):
