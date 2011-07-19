@@ -1,1 +1,5 @@
-global-include *.txt Makefile *.py *.rst .gitignore *.ini
+global-include *.txt Makefile *.py *.rst *.ini
+prune env26/
+prune .tox/
+prune docs/_build/
+prune docs/_themes/
