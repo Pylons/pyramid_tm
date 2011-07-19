@@ -1,5 +1,5 @@
-Next release
-============
+0.2 (2011-07-18)
+----------------
 
 - A new header ``X-Tm`` is now honored by the ``default_commit_veto`` commit
 veto hook. If this header exists in the headerlist, its value must be a
