@@ -19,17 +19,6 @@ Backwards Incompatibilities
   version 0.2 or a custom commit veto function if your application depends on
   the ``X-Tm-Abort`` header.
 
-- ``pyramid_tm`` no longer attempts to roll back the transaction if the
-  downstream application returns a response with a particular status code by
-  default (it no longer configures a default "commit veto").  If you need
-  behavior equivalent to ``pyramid_tm`` 0.2 and older, explicitly add the
-  following to your Paste application configuration (insert the
-  ``pyramid_tm.commit_veto`` line into your app's section; the "myapp"
-  section below is just a sample)::
-
-     [app:myapp]
-     pyramid_tm.commit_veto = pyramid_tm.default_commit_veto
-
 - A commit veto is now called with two arguments: ``request`` and
   ``response``.  The ``request`` is the webob request that caused the
   transaction manager to become active.  The ``response`` is the response

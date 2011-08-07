@@ -30,9 +30,9 @@ def default_commit_veto(request, response):
 
 def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes
-    commit_veto = registry.settings.get('pyramid_tm.commit_veto')
-    if commit_veto is not None:
-        commit_veto = resolver.resolve(commit_veto)
+    commit_veto = registry.settings.get('pyramid_tm.commit_veto',
+                                        default_commit_veto)
+    commit_veto = resolver.maybe_resolve(commit_veto)
 
     def tm_tween(request):
         if 'repoze.tm.active' in request.environ:
