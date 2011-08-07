@@ -15,7 +15,9 @@ Backwards Incompatibilities
 
 - The ``default_commit_veto`` no longer checks for the presence of the
   ``X-Tm-Abort`` header when attempting to figure out whether the transaction
-  should be aborted.
+  should be aborted (although it still checks for the ``X-Tm`` header).  Use
+  version 0.2 or a custom commit veto function if your application depends on
+  the ``X-Tm-Abort`` header.
 
 - ``pyramid_tm`` no longer attempts to roll back the transaction if the
   downstream application returns a response with a particular status code by
@@ -34,10 +36,12 @@ Backwards Incompatibilities
   returned by the Pyramid application.  This call signature is incompatible
   with older versions.  The call signature of a ``pyramid_tm`` 0.2 and older
   commit veto accepted three arguments: ``environ``, ``status``, and
-  ``headers``.  You'll need to either convert your ``commit_veto`` function
-  or use a wrapper to make it compatible with the current calling convention.
-  Here's a simple wrapper function (``bwcompat_commit_veto_wrapper``) that
-  will allow you to use your existing custom commit veto function::
+  ``headers``.  If you're using a custom ``commit_veto`` function, you'll
+  need to either convert your existing function to use the new calling
+  convention or use a wrapper to make it compatible with the new calling
+  convention.  Here's a simple wrapper function
+  (``bwcompat_commit_veto_wrapper``) that will allow you to use your existing
+  custom commit veto function::
 
      def bwcompat_commit_veto_wrapper(request, response):
          return my_custom_commit_veto(request.environ, response.status, 
