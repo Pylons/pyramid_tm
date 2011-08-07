@@ -1,145 +1,157 @@
 import unittest
 
-
 class TestDefaultCommitVeto(unittest.TestCase):
-
-    def _callFUT(self, status, headers=()):
+    def _callFUT(self, response, request=None):
         from pyramid_tm import default_commit_veto
-        return default_commit_veto(None, status, headers)
+        return default_commit_veto(request, response)
 
-    def test_it_true_5XX(self):
-        self.failUnless(self._callFUT('500 Server Error'))
-        self.failUnless(self._callFUT('503 Service Unavailable'))
+    def test_it_true_500(self):
+        response = DummyResponse('500 Server Error')
+        self.failUnless(self._callFUT(response))
 
-    def test_it_true_4XX(self):
-        self.failUnless(self._callFUT('400 Bad Request'))
-        self.failUnless(self._callFUT('411 Length Required'))
+    def test_it_true_503(self):
+        response = DummyResponse('503 Service Unavailable')
+        self.failUnless(self._callFUT(response))
 
-    def test_it_false_2XX(self):
-        self.failIf(self._callFUT('200 OK'))
-        self.failIf(self._callFUT('201 Created'))
+    def test_it_true_400(self):
+        response = DummyResponse('400 Bad Request')
+        self.failUnless(self._callFUT(response))
 
-    def test_it_false_3XX(self):
-        self.failIf(self._callFUT('301 Moved Permanently'))
-        self.failIf(self._callFUT('302 Found'))
+    def test_it_true_411(self):
+        response = DummyResponse('411 Length Required')
+        self.failUnless(self._callFUT(response))
 
-    def test_it_true_x_tm_abort_specific(self):
-        self.failUnless(self._callFUT('200 OK', [('X-Tm-Abort', True)]))
+    def test_it_false_200(self):
+        response = DummyResponse('200 OK')
+        self.failIf(self._callFUT(response))
+
+    def test_it_false_201(self):
+        response = DummyResponse('201 Created')
+        self.failIf(self._callFUT(response))
+
+    def test_it_false_301(self):
+        response = DummyResponse('301 Moved Permanently')
+        self.failIf(self._callFUT(response))
+
+    def test_it_false_302(self):
+        response = DummyResponse('302 Found')
+        self.failIf(self._callFUT(response))
 
     def test_it_false_x_tm_commit(self):
-        self.failIf(self._callFUT('200 OK', [('X-Tm', 'commit')]))
+        response = DummyResponse('200 OK', {'x-tm':'commit'})
+        self.failIf(self._callFUT(response))
 
     def test_it_true_x_tm_abort(self):
-        self.failUnless(self._callFUT('200 OK', [('X-Tm', 'abort')]))
+        response = DummyResponse('200 OK', {'x-tm':'abort'})
+        self.failUnless(self._callFUT(response))
 
     def test_it_true_x_tm_anythingelse(self):
-        self.failUnless(self._callFUT('200 OK', [('X-Tm', '')]))
+        response = DummyResponse('200 OK', {'x-tm':''})
+        self.failUnless(self._callFUT(response))
 
-    def test_x_tm_generic_precedes_x_tm_abort_specific(self):
-        self.failIf(self._callFUT('200 OK', [('X-Tm', 'commit'),
-                                             ('X-Tm-Abort', True)]))
-
-
-class TestTMSubscriber(unittest.TestCase):
-
+class Test_tm_tween_factory(unittest.TestCase):
     def setUp(self):
-        from pyramid_tm import TMSubscriber
-        self.subscriber = TMSubscriber(None)
-        self.subscriber.transaction = MockTransaction()
+        self.txn = DummyTransaction()
+        self.request = DummyRequest()
+        self.response = DummyResponse()
+        self.registry = DummyRegistry()
+        
+    def _callFUT(self, handler=None, registry=None, request=None, txn=None):
+        if handler is None:
+            def handler(request):
+                return self.response
+        if registry is None:
+            registry = self.registry
+        if request is None:
+            request = self.request
+        if txn is None:
+            txn = self.txn
+        from pyramid_tm import tm_tween_factory
+        factory = tm_tween_factory(handler, registry, txn)
+        return factory(request)
 
-    def test_basics(self):
-        subscriber = self.subscriber
-        transaction = subscriber.transaction
+    def test_repoze_tm_active(self):
+        request = DummyRequest()
+        request.environ['repoze.tm.active'] = True
+        result = self._callFUT(request=request)
+        self.assertEqual(result, self.response)
+        self.assertFalse(self.txn.began)
 
-        subscriber.begin()
-        self.assertTrue(transaction.began)
+    def test_handler_exception(self):
+        def handler(request):
+            raise NotImplementedError
+        self.assertRaises(NotImplementedError, self._callFUT, handler=handler)
+        self.assertTrue(self.txn.began)
+        self.assertTrue(self.txn.aborted)
+        self.assertFalse(self.txn.committed)
+        
+    def test_handler_isdoomed(self):
+        txn = DummyTransaction(True)
+        self._callFUT(txn=txn)
+        self.assertTrue(txn.began)
+        self.assertTrue(txn.aborted)
+        self.assertFalse(txn.committed)
 
-        subscriber.commit()
-        self.assertTrue(transaction.committed)
+    def test_commit_veto_true(self):
+        registry = DummyRegistry(
+            {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_true'})
+        result = self._callFUT(registry=registry)
+        self.assertEqual(result, self.response)
+        self.assertTrue(self.txn.began)
+        self.assertTrue(self.txn.aborted)
+        self.assertFalse(self.txn.committed)
 
-        subscriber.abort()
-        self.assertTrue(transaction.aborted)
+    def test_commit_veto_false(self):
+        registry = DummyRegistry(
+            {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_false'})
+        result = self._callFUT(registry=registry)
+        self.assertEqual(result, self.response)
+        self.assertTrue(self.txn.began)
+        self.assertFalse(self.txn.aborted)
+        self.assertTrue(self.txn.committed)
 
-    def test_calling(self):
-        subscriber = self.subscriber
+    def test_commitonly(self):
+        result = self._callFUT()
+        self.assertEqual(result, self.response)
+        self.assertTrue(self.txn.began)
+        self.assertFalse(self.txn.aborted)
+        self.assertTrue(self.txn.committed)
 
-        # no callbacks should be registered if it thinks repoze.tm is alive
-        m = Mock(request=MockRequest())
-        m.request.environ['repoze.tm.active'] = True
-        subscriber(m)
-        self.assertEqual(len(m.request.finished_callbacks), 0)
+def veto_true(request, response):
+    return True
 
-        # with repoze.tm not alive, we should get regular callbacks
-        del m.request.environ['repoze.tm.active']
-        subscriber(m)
-        self.assertEqual(len(m.request.finished_callbacks), 1)
-        self.assertEqual(len(m.request.response_callbacks), 1)
-
-    def build_reqres(self):
-        response = Mock(status='100', headerlist=[])
-        request = Mock(exception=None, environ={})
-        return request, response
-
-    def test_process_commit(self):
-        subscriber = self.subscriber
-        subscriber.commit_veto = lambda x, y, z: None
-        request, response = self.build_reqres()
-        subscriber.process(request, response)
-        self.assertTrue(hasattr(request, '_transaction_committed'))
-        self.assertTrue(subscriber.transaction.committed)
-
-    def test_process_bypass(self):
-        subscriber = self.subscriber
-        request, response = self.build_reqres()
-        subscriber.process(request, response)
-        self.assertTrue(hasattr(request, '_transaction_committed'))
-        self.assertFalse(subscriber.process(request, response))
-
-    def test_process_abort1(self):
-        request, response = self.build_reqres()
-        subscriber = self.subscriber
-        subscriber.transaction.isDoomed = lambda: True
-        subscriber.process(request, response)
-        self.assertTrue(hasattr(request, '_transaction_committed'))
-        self.assertTrue(self.subscriber.transaction.aborted)
-
-    def test_process_abort2(self):
-        request, response = self.build_reqres()
-        subscriber = self.subscriber
-        request.exception = Mock()
-        subscriber.process(request, response)
-        self.assertTrue(hasattr(request, '_transaction_committed'))
-        self.assertTrue(self.subscriber.transaction.aborted)
-
-    def test_process_abort3(self):
-        request, response = self.build_reqres()
-        subscriber = self.subscriber
-        subscriber.commit_veto = lambda x, y, z: True
-        request = Mock(exception=None, environ={})
-        subscriber.process(request, response)
-        self.assertTrue(hasattr(request, '_transaction_committed'))
-        self.assertTrue(subscriber.transaction.aborted)
+def veto_false(request, response):
+    return False
 
 
-class TestIncludeMe(unittest.TestCase):
-
+class Test_includeme(unittest.TestCase):
     def test_it(self):
         from pyramid_tm import includeme
+        config = DummyConfig()
+        includeme(config)
+        self.assertEqual(len(config.tweens), 1)
 
-        m = MockConfig()
-        includeme(m)
-        self.assertEqual(len(m.subscribers), 1)
 
-
-class Mock(object):
+class Dummy(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
+class DummyRegistry(object):
+    def __init__(self, settings=None):
+        if settings is None:
+            settings = {}
+        self.settings = settings
 
-class MockTransaction(object):
+class DummyTransaction(object):
     began = False
     committed = False
     aborted = False
+
+    def __init__(self, doomed=False):
+        self.doomed = doomed
+
+    def isDoomed(self):
+        return self.doomed
 
     def begin(self):
         self.began = True
@@ -154,27 +166,21 @@ class MockTransaction(object):
         self.aborted = True
 
 
-class MockRequest(object):
-
+class DummyRequest(object):
     def __init__(self):
         self.environ = {}
-        self.finished_callbacks = []
-        self.response_callbacks = []
 
-    def add_finished_callback(self, cb):
-        self.finished_callbacks.append(cb)
+class DummyResponse(object):
+    def __init__(self, status='200 OK', headers=None):
+        self.status = status
+        if headers is None:
+            headers = {}
+        self.headers = headers
 
-    def add_response_callback(self, cb):
-        self.response_callbacks.append(cb)
-
-
-class MockConfig(object):
+class DummyConfig(object):
     def __init__(self):
-        self.registry = Mock(settings={})
-        self.subscribers = []
+        self.registry = Dummy(settings={})
+        self.tweens = []
 
-    def maybe_dotted(self, x):
-        return x
-
-    def add_subscriber(self, x, y):
-        self.subscribers.append((x, y))
+    def add_tween(self, x, above=None, below=None):
+        self.tweens.append((x, above, below))

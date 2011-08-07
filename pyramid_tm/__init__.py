@@ -1,10 +1,13 @@
-import pyramid.events
+from pyramid.util import DottedNameResolver
+from pyramid.tweens import EXCVIEW
 
 import transaction
 
+resolver = DottedNameResolver(None)
 
-def default_commit_veto(environ, status, headers):
-    '''When used as a commit veto, the logic in this function will cause the
+def default_commit_veto(request, response):
+    """
+    When used as a commit veto, the logic in this function will cause the
     transaction to be committed if:
 
     - An ``X-Tm`` header with the value ``commit`` exists.
@@ -21,82 +24,78 @@ def default_commit_veto(environ, status, headers):
     - The status code starts with ``4`` or ``5``.
 
     Otherwise the transaction will be committed by default.
-    '''
-
-    abort_compat = False
-    for header_name, header_value in headers:
-        header_name = header_name.lower()
-        if header_name == 'x-tm':
-            if header_value.lower() == 'commit':
-                return False
-            return True
-        # x-tm honored before x-tm-abort compatability
-        elif header_name == 'x-tm-abort':
-            abort_compat = True
-    if abort_compat:
+    """
+    xtm = response.headers.get('x-tm')
+    if xtm is not None:
+        if xtm == 'commit':
+            return False
         return True
+    status = response.status
     for bad in ('4', '5'):
         if status.startswith(bad):
             return True
     return False
 
+def tm_tween_factory(handler, registry, transaction=transaction):
+    # transaction parameterized for testing purposes
+    commit_veto = registry.settings.get('pyramid_tm.commit_veto')
+    if commit_veto is not None:
+        commit_veto = resolver.resolve(commit_veto)
 
-class TMSubscriber(object):
-    '''A NewRequest subscriber that knows about commit_veto.
-    '''
+    def tm_tween(request):
+        if 'repoze.tm.active' in request.environ:
+            return handler(request)
 
-    transaction = staticmethod(transaction)
+        t = transaction.get()
+        t.begin()
 
-    def __init__(self, commit_veto):
-        self.commit_veto = commit_veto
+        try:
+            response = handler(request)
+        except:
+            t.abort()
+            raise
 
-    def __call__(self, event):
-        if 'repoze.tm.active' in event.request.environ:
-            return
+        if transaction.isDoomed():
+            t.abort()
+        elif commit_veto is not None:
+            veto = commit_veto(request, response)
+            if veto:
+                t.abort()
+            else:
+                t.commit()
+        else:
+            t.commit()
 
-        self.begin()
-        event.request.add_finished_callback(self.process)
-        event.request.add_response_callback(self.process)
-
-    def begin(self):
-        self.transaction.begin()
-
-    def commit(self):
-        self.transaction.get().commit()
-
-    def abort(self):
-        self.transaction.get().abort()
-
-    def process(self, request, response=None):
-        if getattr(request, '_transaction_committed', False):
-            return False
-
-        request._transaction_committed = True
-        transaction = self.transaction
-
-        # ZODB 3.8 + has isDoomed
-        if hasattr(transaction, 'isDoomed') and transaction.isDoomed():
-            return self.abort()
-
-        if request.exception is not None:
-            return self.abort()
-
-        if response is not None and self.commit_veto is not None:
-            environ = request.environ
-            status, headers = response.status, response.headerlist
-
-            if self.commit_veto(environ, status, headers):
-                return self.abort()
-
-        return self.commit()
-
+        return response
+        
+    return tm_tween
 
 def includeme(config):
-    '''Setup the NewRequest subscriber for bootstrapping transactions.
-    '''
+    """
+    Set up a 'tween' to do transaction management using the ``transaction``
+    package.  The tween will be slotted between the main Pyramid app and the
+    Pyramid exception view handler.
 
-    commit_veto = config.registry.settings.get('pyramid_tm.commit_veto',
-                                               default_commit_veto)
-    commit_veto = config.maybe_dotted(commit_veto)
-    subscriber = TMSubscriber(commit_veto)
-    config.add_subscriber(subscriber, pyramid.events.NewRequest)
+    For every request it handles, the tween will begin a transaction by
+    calling ``transaction.begin()``, and will then call the downstream
+    handler (usually the main Pyramid application request handler) to obtain
+    a response.  When attempting to call the downstream handler:
+
+    - If an exception is raised by downstream handler while attempting to
+      obtain a response, the transaction will be rolled back
+      (``transaction.abort()`` will be called).
+
+    - If no exception is raised by the downstream handler, but the
+      transaction is doomed (``transaction.doom()`` has been called), the
+      transaction will be rolled back.
+
+    - If the deployment configuration specifies a ``pyramid_tm.commit_veto``
+      setting, and the transaction management tween receives a response from
+      the downstream handler, the commit veto hook will be called.  If it
+      returns True, the transaction will be rolled back.  If it returns
+      False, the transaction will be committed.
+
+    - If none of the above conditions are True, the transaction will be
+      committed (via ``transaction.commit()``).
+    """
+    config.add_tween(tm_tween_factory, above=EXCVIEW)
