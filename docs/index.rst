@@ -123,6 +123,9 @@ contents.  In the above example, the code would be implemented as a
 "commit_veto" function which lives in the "package" submodule of the "my"
 package.
 
+To run without a commit veto function, pass the empty string or the value
+``None`` as the ``pyramid_tm.commit_veto`` setting.
+
 More Information
 ----------------
 

@@ -92,6 +92,29 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(txn.aborted)
         self.assertFalse(txn.committed)
 
+    def test_default_commit_veto(self):
+        response = DummyResponse()
+        response.status = '500 Bad Request'
+        def handler(request):
+            return response
+        result = self._callFUT(handler=handler)
+        self.assertEqual(result, response)
+        self.assertTrue(self.txn.began)
+        self.assertTrue(self.txn.aborted)
+        self.assertFalse(self.txn.committed)
+
+    def test_null_commit_veto(self):
+        response = DummyResponse()
+        response.status = '500 Bad Request'
+        def handler(request):
+            return response
+        registry = DummyRegistry({'pyramid_tm.commit_veto':None})
+        result = self._callFUT(handler=handler, registry=registry)
+        self.assertEqual(result, response)
+        self.assertTrue(self.txn.began)
+        self.assertFalse(self.txn.aborted)
+        self.assertTrue(self.txn.committed)
+
     def test_commit_veto_true(self):
         registry = DummyRegistry(
             {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_true'})
