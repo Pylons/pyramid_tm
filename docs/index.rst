@@ -58,9 +58,11 @@ transaction is instead committed using ``transaction.commit()``.
 By itself, this :term:`transaction` machinery doesn't do much.  It is
 up to third-party code to *join* the active transaction to benefit.
 
-See `repoze.filesafe <http://pypi.python.org/pypi/repoze.filesafe>`_
-for an example of how files creation can be committed or rolled
-back based on :term:`transaction`.
+See `repoze.filesafe <http://pypi.python.org/pypi/repoze.filesafe>`_ for an
+example of how files creation can be committed or rolled back based on
+:term:`transaction` and the `pyramid_mailer
+<http://docs.pylonsproject.org/projects/pyramid_mailer/dev/>`_ package to see
+how you can prevent emails from being sent until a transaction succeeeds.
 
 Using A Commit Veto
 -------------------
@@ -73,12 +75,13 @@ First, define the callback somewhere in your application:
 .. code-block:: python
    :linenos:
 
-   def commit_veto(environ, status, headers):
-       for header_name, header_value in headers:
-           if header_name.lower() == 'x-tm':
-               if header_value.lower() == 'commit':
-                   return True
+   def commit_veto(request, response):
+       xtm = response.headers.get('x-tm')
+       if xtm is not None:
+           if xtm == 'commit':
                return False
+           return True
+       status = response.status
        for bad in ('4', '5'):
            if status.startswith(bad):
                return True
@@ -104,7 +107,7 @@ Via PasteDeploy:
    :linenos:
 
    [app:myapp]
-   pyramid_tm.commit_veto = my.package:commit_veto
+   pyramid_tm.commit_veto = my.package.commit_veto
 
 In the PasteDeploy example, the path is a Python dotted name, where the dots
 separate module and package names, and the colon separates a module from its
@@ -114,8 +117,7 @@ package.
 
 A variant of the commit veto implementation shown above as an example is
 actually present in the ``pyramid_tm`` package as
-``pyramid_tm.default_commit_veto`` and is used if no other commit veto is
-specified. It's fairly general, so you needn't implement one yourself.
+``pyramid_tm.default_commit_veto``.
 
 More Information
 ----------------

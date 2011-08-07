@@ -8,22 +8,14 @@ resolver = DottedNameResolver(None)
 def default_commit_veto(request, response):
     """
     When used as a commit veto, the logic in this function will cause the
-    transaction to be committed if:
+    transaction to be aborted if:
 
-    - An ``X-Tm`` header with the value ``commit`` exists.
+    - An ``X-Tm`` response header with the value ``abort`` (or any value
+      other than ``commit``) exists.
 
-    If an ``X-Tm`` header with the value ``commit`` does not exist, the
-    transaction will be aborted, if:
+    - The response status code starts with ``4`` or ``5``.
 
-    - An ``X-Tm`` header with the value ``abort`` (or any value other than
-      ``commit``) exists.
-
-    - An ``X-Tm-Abort`` header exists with any value (for backwards
-      compatability; prefer ``X-Tm=abort`` in new code).
-
-    - The status code starts with ``4`` or ``5``.
-
-    Otherwise the transaction will be committed by default.
+    Otherwise the transaction will be allowed to commit.
     """
     xtm = response.headers.get('x-tm')
     if xtm is not None:

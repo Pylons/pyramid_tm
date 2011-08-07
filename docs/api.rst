@@ -9,5 +9,4 @@
 
 .. autofunction:: default_commit_veto
 
-.. autoclass:: TMSubscriber
 

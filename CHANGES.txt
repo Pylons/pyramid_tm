@@ -1,3 +1,40 @@
+Next release
+------------
+
+Features
+~~~~~~~~
+
+- The transaction manager has been converted to a Pyramid 1.1.1 "tween"
+  (instead of an event subscriber).
+
+Backwards Incompatibilities
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Incompatible with Pyramid < 1.1.1.  Use version 0.2 if you need
+  compatibility with older Pyramids.
+
+- ``pyramid_tm`` no longer attempts to roll back the transaction if the
+  downstream application returns a response with a particular status code by
+  default (it no longer configures a default "commit veto").  If you need the
+  old behavior, explicitly add the following to your Paste application
+  configuration (insert the ``pyramid_tm.commit_veto`` line into your app's
+  section; the "myapp" section below is just a sample)::
+
+     [app:myapp]
+     pyramid_tm.commit_veto = pyramid_tm.default_commit_veto
+
+- A commit veto is now called with two arguments: ``request`` and
+  ``response``.  The ``request`` is the webob request that caused the
+  transaction manager to become active.  The ``response`` is the response
+  returned by the Pyramid application.  The previous call signature of a
+  commit veto accepted three arguments: ``environ``, ``status``, and
+  ``headers``.  Here's a simple wrapper script that will allow you to
+  use your existing custom commit veto function::
+
+     def bwcompat_commit_veto_wrapper(request, response):
+         return my_custom_commit_veto(request.environ, request.status, 
+                                      request.headerlist)
+
 0.2 (2011-07-18)
 ----------------
 
