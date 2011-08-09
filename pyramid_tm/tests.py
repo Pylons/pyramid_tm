@@ -85,6 +85,24 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.began)
         self.assertTrue(self.txn.aborted)
         self.assertFalse(self.txn.committed)
+
+    def test_handler_retryable_exception(self):
+        from transaction.interfaces import TransientError
+        class Conflict(TransientError):
+            pass
+        count = []
+        response = DummyResponse()
+        def handler(request, count=count):
+            count.append(True)
+            if len(count) == 3:
+                return response
+            raise Conflict
+        result = self._callFUT(handler=handler)
+        self.assertTrue(self.txn.began)
+        self.assertEqual(self.txn.committed, 1)
+        self.assertEqual(self.txn.aborted, 2)
+        self.assertEqual(self.request.made_seekable, 3)
+        self.assertEqual(result, response)
         
     def test_handler_isdoomed(self):
         txn = DummyTransaction(True)
@@ -175,6 +193,9 @@ class DummyTransaction(TransactionManager):
 
     def __init__(self, doomed=False):
         self.doomed = doomed
+        self.began = 0
+        self.committed = 0
+        self.aborted = 0
 
     def isDoomed(self):
         return self.doomed
@@ -183,18 +204,22 @@ class DummyTransaction(TransactionManager):
         return self
 
     def begin(self):
-        self.began = True
+        self.began+=1
         return self
 
     def commit(self):
-        self.committed = True
+        self.committed+=1
 
     def abort(self):
-        self.aborted = True
+        self.aborted+=1
 
 class DummyRequest(object):
     def __init__(self):
         self.environ = {}
+        self.made_seekable = 0
+
+    def make_body_seekable(self):
+        self.made_seekable += 1
 
 class DummyResponse(object):
     def __init__(self, status='200 OK', headers=None):
@@ -208,5 +233,5 @@ class DummyConfig(object):
         self.registry = Dummy(settings={})
         self.tweens = []
 
-    def add_tween(self, x, above=None, below=None):
-        self.tweens.append((x, above, below))
+    def add_tween(self, x, alias=None, under=None, over=None):
+        self.tweens.append((x, alias, under, over))

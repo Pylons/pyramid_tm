@@ -49,12 +49,11 @@ def tm_tween_factory(handler, registry, transaction=transaction):
             return handler(request)
 
         try:
-            # XXX make a copy of request for each attempt?  Sergey: if they
-            # use body_file_raw or body_file and no middleware above made it
-            # seekable, the body is lost.  Also: rewind the body after each
-            # attempt.
             for attempt in transaction.attempts(attempts):
                 with attempt as t:
+                    # make_body_seekable will copy wsgi.input if necessary,
+                    # otherwise it will rewind the copy to position zero
+                    request.make_body_seekable()
                     response = handler(request)
                     if t.isDoomed():
                         raise AbortResponse(response)
