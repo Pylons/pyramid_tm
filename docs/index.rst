@@ -56,11 +56,11 @@ are tested:
      is a ``X-Tm`` response header with a value that does not equal
      ``commit``.
 
-If none of these checks called ``transaction.abort()`` then the
-transaction is instead committed using ``transaction.commit()``.
+If none of these checks calls ``transaction.abort()`` then the transaction is
+instead committed using ``transaction.commit()``.
 
-By itself, this :term:`transaction` machinery doesn't do much.  It is
-up to third-party code to *join* the active transaction to benefit.
+By itself, this :term:`transaction` machinery doesn't do much.  It is up to
+third-party code to *join* the active transaction to benefit.
 
 See `repoze.filesafe <http://pypi.python.org/pypi/repoze.filesafe>`_ for an
 example of how files creation can be committed or rolled back based on
@@ -125,6 +125,43 @@ package.
 
 To run without a commit veto function, pass the empty string or the value
 ``None`` as the ``pyramid_tm.commit_veto`` setting.
+
+Retrying
+--------
+
+When the transaction manager calls the downstream handler, if the handler
+raises a "retryable" exception, the transaction manager will attempt to call
+the downstream handler again with the same request.  If the second attempt
+fails, and the downstream handler again raise a retryable error, the
+transaction manager will try the request again one more time.  If the third
+attempt fails, the "retryable" exception will be raised to its caller.
+
+Retryable exceptions include ```ZODB.POSException.ConflictError``, and
+certain exceptions raised by various data managers, such as
+``psycopg2.extensions.TransactionRollbackError``, ``cx_Oracle.DatabaseError``
+(where the exception's code is 8877).  Any exception which inherits from
+``transaction.interfaces.TransientError`` will be treated with retry
+behavior.
+
+To change the default number of attempts used during retry (from 3 to
+something higher or lower, but at least must be 1), use the
+``pyramid_tm.attempts`` configuration setting.
+
+Explicit Tween Configuration
+----------------------------
+
+Note that the transaction manager is a Pryamid "tween", and it can be used in
+the explicit tween list if its implicit position in the tween chain is
+incorrect (see the output of ``paster ptweens``)::
+
+   [app:myapp]
+   pyramid.tweens = someothertween
+                    pyramid.tweens.excview_tween_factory
+                    pyramid_tm.tm_tween_factory
+
+It usually belongs directly above the "MAIN" entry in the ``paster ptweens``
+output, and will attempt to sort there by default as the result of having
+``include('pyramid_tm')`` invoked.
 
 More Information
 ----------------

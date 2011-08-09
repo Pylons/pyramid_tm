@@ -28,49 +28,47 @@ def default_commit_veto(request, response):
             return True
     return False
 
+class AbortResponse(Exception):
+    def __init__(self, response):
+        self.response = response
+
 def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes
     commit_veto = registry.settings.get('pyramid_tm.commit_veto',
                                         default_commit_veto)
+    attempts = int(registry.settings.get('pyramid_tm.attempts', 3))
+
     if not commit_veto:
         commit_veto = None
-
-    if commit_veto:
+    else:
         commit_veto = resolver.maybe_resolve(commit_veto)
 
     def tm_tween(request):
         if 'repoze.tm.active' in request.environ:
+            # don't handle txn mgmt if repoze.tm is in the WSGI pipeline
             return handler(request)
 
-        t = transaction.get()
-        t.begin()
-
         try:
-            response = handler(request)
-        except:
-            t.abort()
-            raise
+            for attempt in transaction.attempts(attempts):
+                with attempt as t:
+                    response = handler(request)
+                    if t.isDoomed():
+                        raise AbortResponse(response)
+                    if commit_veto is not None:
+                        veto = commit_veto(request, response)
+                        if veto:
+                            raise AbortResponse(response)
+                    return response
+        except AbortResponse, e:
+            return e.response
 
-        if transaction.isDoomed():
-            t.abort()
-        elif commit_veto is not None:
-            veto = commit_veto(request, response)
-            if veto:
-                t.abort()
-            else:
-                t.commit()
-        else:
-            t.commit()
-
-        return response
-        
     return tm_tween
 
 def includeme(config):
     """
-    Set up a 'tween' to do transaction management using the ``transaction``
-    package.  The tween will be slotted between the main Pyramid app and the
-    Pyramid exception view handler.
+    Set up am implicit 'tween' to do transaction management using the
+    ``transaction`` package.  The tween will be slotted between the main
+    Pyramid app and the Pyramid exception view handler.
 
     For every request it handles, the tween will begin a transaction by
     calling ``transaction.begin()``, and will then call the downstream
@@ -94,4 +92,4 @@ def includeme(config):
     - If none of the above conditions are True, the transaction will be
       committed (via ``transaction.commit()``).
     """
-    config.add_tween(tm_tween_factory, above=EXCVIEW)
+    config.add_tween(tm_tween_factory, under=EXCVIEW)

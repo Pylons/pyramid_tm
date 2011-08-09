@@ -1,4 +1,5 @@
 import unittest
+from transaction import TransactionManager
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -165,10 +166,12 @@ class DummyRegistry(object):
             settings = {}
         self.settings = settings
 
-class DummyTransaction(object):
+
+class DummyTransaction(TransactionManager):
     began = False
     committed = False
     aborted = False
+    _resources = []
 
     def __init__(self, doomed=False):
         self.doomed = doomed
@@ -176,10 +179,11 @@ class DummyTransaction(object):
     def isDoomed(self):
         return self.doomed
 
+    def get(self):
+        return self
+
     def begin(self):
         self.began = True
-
-    def get(self):
         return self
 
     def commit(self):
@@ -187,7 +191,6 @@ class DummyTransaction(object):
 
     def abort(self):
         self.aborted = True
-
 
 class DummyRequest(object):
     def __init__(self):
