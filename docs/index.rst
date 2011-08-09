@@ -130,22 +130,41 @@ Retrying
 --------
 
 When the transaction manager calls the downstream handler, if the handler
-raises a "retryable" exception, the transaction manager will attempt to call
-the downstream handler again with the same request.  If the second attempt
-fails, and the downstream handler again raise a retryable error, the
-transaction manager will try the request again one more time.  If the third
-attempt fails, the "retryable" exception will be raised to its caller.
+raises a "retryable" exception, the transaction manager can be configured to
+attempt to call the downstream handler again with the same request, in effect
+"replaying" the request.
+
+By default, retrying is turned off.  To turn it on, use the
+``pyramid_tm.attempts`` configuration setting.  By default this setting is
+``1``, meaning only one attempt will be tried, and no retry will happen even
+if a retryable error is raised by the handler.  But if the value, for
+example, is set to ``3``, the following set of events might happen.
+
+- The first attempt to call the handler raises a retryable exception;
+  a second attempt will be tried.
+
+- The second attempt raises a retryable exception, the transaction manager
+  will try the request again one more time.
+
+- The third attempt also raises a retryable exception, at this point all
+  attempts are used up and the "retryable" exception will be raised to its
+  caller.
+
+Or this might happen:
+
+- The first attempt to call the handler raises a retryable exception;
+  a second attempt will be tried.
+
+- The second attempt returns a response without raising any exception.
+
+- The response is returned to the caller.
 
 Retryable exceptions include ```ZODB.POSException.ConflictError``, and
 certain exceptions raised by various data managers, such as
 ``psycopg2.extensions.TransactionRollbackError``, ``cx_Oracle.DatabaseError``
-(where the exception's code is 8877).  Any exception which inherits from
+where the exception's code is 8877.  Any exception which inherits from
 ``transaction.interfaces.TransientError`` will be treated with retry
 behavior.
-
-To change the default number of attempts used during retry (from 3 to
-something higher or lower, but at least must be 1), use the
-``pyramid_tm.attempts`` configuration setting.
 
 Explicit Tween Configuration
 ----------------------------

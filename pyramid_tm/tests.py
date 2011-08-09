@@ -92,6 +92,7 @@ class Test_tm_tween_factory(unittest.TestCase):
             pass
         count = []
         response = DummyResponse()
+        self.registry.settings['pyramid_tm.attempts'] = '3'
         def handler(request, count=count):
             count.append(True)
             if len(count) == 3:
@@ -103,6 +104,15 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(self.txn.aborted, 2)
         self.assertEqual(self.request.made_seekable, 3)
         self.assertEqual(result, response)
+
+    def test_handler_retryable_exception_defaults_to_1(self):
+        from transaction.interfaces import TransientError
+        class Conflict(TransientError):
+            pass
+        count = []
+        def handler(request, count=count):
+            raise Conflict
+        self.assertRaises(Conflict, self._callFUT, handler=handler)
         
     def test_handler_isdoomed(self):
         txn = DummyTransaction(True)
@@ -199,9 +209,6 @@ class DummyTransaction(TransactionManager):
 
     def isDoomed(self):
         return self.doomed
-
-    def get(self):
-        return self
 
     def begin(self):
         self.began+=1

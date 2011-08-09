@@ -36,7 +36,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes
     commit_veto = registry.settings.get('pyramid_tm.commit_veto',
                                         default_commit_veto)
-    attempts = int(registry.settings.get('pyramid_tm.attempts', 3))
+    attempts = int(registry.settings.get('pyramid_tm.attempts', 1))
 
     if not commit_veto:
         commit_veto = None
@@ -53,7 +53,8 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                 with attempt as t:
                     # make_body_seekable will copy wsgi.input if necessary,
                     # otherwise it will rewind the copy to position zero
-                    request.make_body_seekable()
+                    if attempts != 1:
+                        request.make_body_seekable()
                     response = handler(request)
                     if t.isDoomed():
                         raise AbortResponse(response)
