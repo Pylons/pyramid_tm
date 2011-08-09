@@ -150,7 +150,7 @@ something higher or lower, but at least must be 1), use the
 Explicit Tween Configuration
 ----------------------------
 
-Note that the transaction manager is a Pryamid "tween", and it can be used in
+Note that the transaction manager is a Pyramid "tween", and it can be used in
 the explicit tween list if its implicit position in the tween chain is
 incorrect (see the output of ``paster ptweens``)::
 
