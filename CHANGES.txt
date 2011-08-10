@@ -5,17 +5,25 @@ Features
 ~~~~~~~~
 
 - The transaction manager has been converted to a Pyramid 1.1.1 "tween"
-  (instead of an event subscriber).
+  (instead of an event subscriber).  It will be slotted directly "below" the
+  exception view handler, meaning it will have a chance to handle exceptions
+  before they are turned into responses.
 
 - The transaction manager will now retry retryable exceptions (such as a ZODB
-  conflict error) by default.  See the ``Retrying`` section of the
-  documentation.
+  conflict error) if ``pyramid.attempts`` is configured to be more than the
+  default of ``1``.  See the ``Retrying`` section of the documentation.
 
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Incompatible with Pyramid < 1.1.1dev.  Use ``pyramid_tm`` version 0.2 if
   you need compatibility with an older Pyramid installation.
+
+- The ``default_commit_veto`` commit veto callback is no longer configured
+  into the system by default.  Use ``pyramid_tm.commit_veto =
+  pyramid_tm.default_commit_veto`` in the deployment settings to add it.
+  This is for parity with ``repoze.tm2``, which doesn't configure in a commit
+  veto by default either.
 
 - The ``default_commit_veto`` no longer checks for the presence of the
   ``X-Tm-Abort`` header when attempting to figure out whether the transaction

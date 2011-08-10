@@ -34,8 +34,7 @@ class AbortResponse(Exception):
 
 def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes
-    commit_veto = registry.settings.get('pyramid_tm.commit_veto',
-                                        default_commit_veto)
+    commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
     attempts = int(registry.settings.get('pyramid_tm.attempts', 1))
 
     if not commit_veto:
