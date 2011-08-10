@@ -24,7 +24,7 @@ except IOError:
     README = CHANGES = ''
 
 install_requires = [
-    'pyramid==dev',
+    'pyramid>=1.1.1dev',
     'transaction',
     ]
 
