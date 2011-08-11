@@ -4,7 +4,7 @@ Next release
 Features
 ~~~~~~~~
 
-- The transaction manager has been converted to a Pyramid 1.1.1 "tween"
+- The transaction manager has been converted to a Pyramid 1.2 "tween"
   (instead of an event subscriber).  It will be slotted directly "below" the
   exception view handler, meaning it will have a chance to handle exceptions
   before they are turned into responses.
@@ -16,7 +16,7 @@ Features
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Incompatible with Pyramid < 1.1.1dev.  Use ``pyramid_tm`` version 0.2 if
+- Incompatible with Pyramid < 1.2dev.  Use ``pyramid_tm`` version 0.2 if
   you need compatibility with an older Pyramid installation.
 
 - The ``default_commit_veto`` commit veto callback is no longer configured
