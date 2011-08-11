@@ -1,3 +1,4 @@
+from __future__ import with_statement
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
 
