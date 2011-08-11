@@ -20,7 +20,7 @@ Backwards Incompatibilities
   you need compatibility with an older Pyramid installation.
 
 - The ``default_commit_veto`` commit veto callback is no longer configured
-  into the system by default.  Use ``pyramid_tm.commit_veto =
+  into the system by default.  Use ``tm.commit_veto =
   pyramid_tm.default_commit_veto`` in the deployment settings to add it.
   This is for parity with ``repoze.tm2``, which doesn't configure in a commit
   veto by default either.
@@ -47,6 +47,13 @@ Backwards Incompatibilities
      def bwcompat_commit_veto_wrapper(request, response):
          return my_custom_commit_veto(request.environ, response.status, 
                                       response.headerlist)
+
+Deprecations
+~~~~~~~~~~~~
+
+- The ``pyramid_tm.commit_veto`` configuration setting is now canonically
+  spelled as ``tm.commit_veto``.  The older spelling will continue to work,
+  but may raise a deprecation error when used.
 
 0.2 (2011-07-18)
 ----------------

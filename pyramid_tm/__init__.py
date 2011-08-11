@@ -34,8 +34,9 @@ class AbortResponse(Exception):
 
 def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes
-    commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
-    attempts = int(registry.settings.get('pyramid_tm.attempts', 1))
+    old_commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
+    commit_veto = registry.settings.get('tm.commit_veto', old_commit_veto)
+    attempts = int(registry.settings.get('tm.attempts', 1))
 
     if not commit_veto:
         commit_veto = None
@@ -86,11 +87,11 @@ def includeme(config):
       transaction is doomed (``transaction.doom()`` has been called), the
       transaction will be rolled back.
 
-    - If the deployment configuration specifies a ``pyramid_tm.commit_veto``
-      setting, and the transaction management tween receives a response from
-      the downstream handler, the commit veto hook will be called.  If it
-      returns True, the transaction will be rolled back.  If it returns
-      False, the transaction will be committed.
+    - If the deployment configuration specifies a ``tm.commit_veto`` setting,
+      and the transaction management tween receives a response from the
+      downstream handler, the commit veto hook will be called.  If it returns
+      True, the transaction will be rolled back.  If it returns False, the
+      transaction will be committed.
 
     - If none of the above conditions are True, the transaction will be
       committed (via ``transaction.commit()``).

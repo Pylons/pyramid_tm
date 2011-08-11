@@ -92,7 +92,7 @@ class Test_tm_tween_factory(unittest.TestCase):
             pass
         count = []
         response = DummyResponse()
-        self.registry.settings['pyramid_tm.attempts'] = '3'
+        self.registry.settings['tm.attempts'] = '3'
         def handler(request, count=count):
             count.append(True)
             if len(count) == 3:
@@ -134,7 +134,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_500_with_default_commit_veto(self):
         settings = self.registry.settings
-        settings['pyramid_tm.commit_veto'] = 'pyramid_tm.default_commit_veto'
+        settings['tm.commit_veto'] = 'pyramid_tm.default_commit_veto'
         response = DummyResponse()
         response.status = '500 Bad Request'
         def handler(request):
@@ -150,7 +150,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         response.status = '500 Bad Request'
         def handler(request):
             return response
-        registry = DummyRegistry({'pyramid_tm.commit_veto':None})
+        registry = DummyRegistry({'tm.commit_veto':None})
         result = self._callFUT(handler=handler, registry=registry)
         self.assertEqual(result, response)
         self.assertTrue(self.txn.began)
@@ -159,7 +159,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_commit_veto_true(self):
         registry = DummyRegistry(
-            {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_true'})
+            {'tm.commit_veto':'pyramid_tm.tests.veto_true'})
         result = self._callFUT(registry=registry)
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
@@ -168,7 +168,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_commit_veto_false(self):
         registry = DummyRegistry(
-            {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_false'})
+            {'tm.commit_veto':'pyramid_tm.tests.veto_false'})
         result = self._callFUT(registry=registry)
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
@@ -181,6 +181,15 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.began)
         self.assertFalse(self.txn.aborted)
         self.assertTrue(self.txn.committed)
+
+    def test_commit_veto_alias(self):
+        registry = DummyRegistry(
+            {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_true'})
+        result = self._callFUT(registry=registry)
+        self.assertEqual(result, self.response)
+        self.assertTrue(self.txn.began)
+        self.assertTrue(self.txn.aborted)
+        self.assertFalse(self.txn.committed)
 
 def veto_true(request, response):
     return True
