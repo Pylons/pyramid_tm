@@ -200,10 +200,12 @@ def veto_false(request, response):
 
 class Test_includeme(unittest.TestCase):
     def test_it(self):
+        from pyramid.tweens import EXCVIEW
         from pyramid_tm import includeme
         config = DummyConfig()
         includeme(config)
-        self.assertEqual(len(config.tweens), 1)
+        self.assertEqual(config.tweens,
+                         [('pyramid_tm.tm_tween_factory', 'tm', EXCVIEW, None)])
 
 
 class Dummy(object):
