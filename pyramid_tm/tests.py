@@ -205,7 +205,7 @@ class Test_includeme(unittest.TestCase):
         config = DummyConfig()
         includeme(config)
         self.assertEqual(config.tweens,
-                         [('pyramid_tm.tm_tween_factory', 'tm', EXCVIEW, None)])
+                         [('pyramid_tm.tm_tween_factory', EXCVIEW, None)])
 
 
 class Dummy(object):
@@ -264,5 +264,5 @@ class DummyConfig(object):
         self.registry = Dummy(settings={})
         self.tweens = []
 
-    def add_tween(self, x, alias=None, under=None, over=None):
-        self.tweens.append((x, alias, under, over))
+    def add_tween(self, x, under=None, over=None):
+        self.tweens.append((x, under, over))

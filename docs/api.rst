@@ -9,4 +9,5 @@
 
 .. autofunction:: default_commit_veto
 
+.. autofunction:: tm_tween_factory
 

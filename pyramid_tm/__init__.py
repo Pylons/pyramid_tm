@@ -97,4 +97,4 @@ def includeme(config):
     - If none of the above conditions are True, the transaction will be
       committed (via ``transaction.commit()``).
     """
-    config.add_tween('pyramid_tm.tm_tween_factory', alias='tm', under=EXCVIEW)
+    config.add_tween('pyramid_tm.tm_tween_factory', under=EXCVIEW)
