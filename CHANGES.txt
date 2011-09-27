@@ -20,8 +20,8 @@ Features
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Incompatible with Pyramid < 1.2a1.  Use ``pyramid_tm`` version 0.2 if
-  you need compatibility with an older Pyramid installation.
+- Incompatible with Pyramid < 1.2a1.  Use ``pyramid_tm`` version 0.2 if you
+  need compatibility with an older Pyramid installation.
 
 - The ``default_commit_veto`` commit veto callback is no longer configured
   into the system by default.  Use ``tm.commit_veto =
@@ -63,14 +63,15 @@ Deprecations
 ----------------
 
 - A new header ``X-Tm`` is now honored by the ``default_commit_veto`` commit
-veto hook. If this header exists in the headerlist, its value must be a
-string. If its value is ``commit``, the transaction will be committed
-regardless of the status code or the value of ``X-Tm-Abort``. If the value
-of the ``X-Tm`` header is ``abort`` (or any other string value except
-``commit``), the transaction will be aborted, regardless of the status code
-or the value of ``X-Tm-Abort``.
+  veto hook. If this header exists in the headerlist, its value must be a
+  string. If its value is ``commit``, the transaction will be committed
+  regardless of the status code or the value of ``X-Tm-Abort``. If the value
+  of the ``X-Tm`` header is ``abort`` (or any other string value except
+  ``commit``), the transaction will be aborted, regardless of the status code
+  or the value of ``X-Tm-Abort``.
 
 0.1 (2011-02-23)
 ----------------
 
 - Initial release, based on repoze.tm2
+
