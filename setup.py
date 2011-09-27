@@ -29,7 +29,7 @@ install_requires = [
     ]
 
 setup(name='pyramid_tm',
-      version='0.2',
+      version='0.3',
       description=('A package which allows Pyramid requests to join the '
                    'active transaction'),
       long_description=README + '\n\n' + CHANGES,

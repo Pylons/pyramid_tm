@@ -1,5 +1,5 @@
-Next release
-------------
+0.3 (2011-09-27)
+----------------
 
 Features
 ~~~~~~~~
@@ -7,7 +7,9 @@ Features
 - The transaction manager has been converted to a Pyramid 1.2 "tween"
   (instead of an event subscriber).  It will be slotted directly "below" the
   exception view handler, meaning it will have a chance to handle exceptions
-  before they are turned into responses.
+  before they are turned into responses.  This means it's best to "raise
+  HTTPFound(...)" instead of "return HTTPFound(...)" if you want an HTTP
+  exception to abort the transaction.
 
 - The transaction manager will now retry retryable exceptions (such as a ZODB
   conflict error) if ``pyramid.attempts`` is configured to be more than the
