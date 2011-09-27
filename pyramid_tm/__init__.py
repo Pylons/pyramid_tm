@@ -1,8 +1,10 @@
 from __future__ import with_statement
+
+import sys
+import transaction
+
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
-
-import transaction
 
 resolver = DottedNameResolver(None)
 
@@ -64,7 +66,8 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                         if veto:
                             raise AbortResponse(response)
                     return response
-        except AbortResponse, e:
+        except AbortResponse:
+            e = sys.exc_info()[1] # py2.5-py3 compat
             return e.response
 
     return tm_tween

@@ -28,7 +28,6 @@ install_requires = [
     'transaction',
     ]
 
-
 setup(name='pyramid_tm',
       version='0.2',
       description=('A package which allows Pyramid requests to join the '
@@ -37,6 +36,10 @@ setup(name='pyramid_tm',
       classifiers=[
         "Intended Audience :: Developers",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
         "Framework :: Pylons",
         "Topic :: Internet :: WWW/HTTP :: WSGI",
         "License :: Repoze Public License",

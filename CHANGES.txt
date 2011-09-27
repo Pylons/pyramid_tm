@@ -13,6 +13,8 @@ Features
   conflict error) if ``pyramid.attempts`` is configured to be more than the
   default of ``1``.  See the ``Retrying`` section of the documentation.
 
+- Python 3.2 compatibility (requires Pyramid 1.3dev+).
+
 Backwards Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
