@@ -1,2 +1,0 @@
-pyramid>=1.2dev
-transaction
