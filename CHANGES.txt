@@ -1,3 +1,24 @@
+Next release
+------------
+
+Bug Fixes
+~~~~~~~~~
+
+- Work around failure to retry ConflictError properly at commit time by the
+  ``transaction`` 1.2.0 package.  See
+  https://mail.zope.org/pipermail/zodb-dev/2012-March/014603.html for
+  details.
+
+Testing
+~~~~~~~
+
+- No longer tested under Python 2.5 by ``tox.ini`` (and therefore no longer
+  tested under 2.5 by the Pylons Jenkins server).  The package may still work
+  under 2.5, but automated tests will no longer show breakage when it changes
+  in ways that break 2.5 support.
+
+- Squash test deprecation warnings under Python 3.2.
+
 0.3 (2011-09-27)
 ----------------
 
@@ -12,7 +33,7 @@ Features
   exception to abort the transaction.
 
 - The transaction manager will now retry retryable exceptions (such as a ZODB
-  conflict error) if ``pyramid.attempts`` is configured to be more than the
+  conflict error) if ``tm.attempts`` is configured to be more than the
   default of ``1``.  See the ``Retrying`` section of the documentation.
 
 - Python 3.2 compatibility (requires Pyramid 1.3dev+).

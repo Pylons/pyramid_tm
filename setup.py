@@ -28,6 +28,9 @@ install_requires = [
     'transaction',
     ]
 
+testing_extras = ['nose', 'coverage']
+docs_extras = ['Sphinx']
+
 setup(name='pyramid_tm',
       version='0.3',
       description=('A package which allows Pyramid requests to join the '
@@ -56,4 +59,8 @@ setup(name='pyramid_tm',
       tests_require=install_requires,
       test_suite="pyramid_tm",
       entry_points='',
+      extras_require = {
+          'testing':testing_extras,
+          'docs':docs_extras,
+          },
       )

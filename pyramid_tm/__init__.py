@@ -35,6 +35,40 @@ class AbortResponse(Exception):
     def __init__(self, response):
         self.response = response
 
+# work around broken "attempts" method of TransactionManager in transaction 
+# 1.2.0
+def _attempts(manager, number=3):
+    assert number > 0
+    while number:
+        number -= 1
+        if number:
+            yield Attempt(manager)
+        else:
+            yield manager
+
+class Attempt(object):
+
+    def __init__(self, manager):
+        self.manager = manager
+
+    def __enter__(self):
+        return self.manager.__enter__()
+
+    def __exit__(self, t, v, tb):
+        if v is None:
+            try:
+                self.manager.commit()
+            except:
+                # this is what transaction 1.2.0 doesn't do (it doesn't
+                # catch exceptions raised by a commit)
+                retry = self.manager._retryable(*sys.exc_info()[:2])
+                self.manager.abort()
+                return retry
+        else:
+            retry = self.manager._retryable(t, v)
+            self.manager.abort()
+            return retry
+            
 def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes
     old_commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
@@ -52,7 +86,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
             return handler(request)
 
         try:
-            for attempt in transaction.attempts(attempts):
+            for attempt in _attempts(transaction.manager, attempts):
                 with attempt as t:
                     # make_body_seekable will copy wsgi.input if necessary,
                     # otherwise it will rewind the copy to position zero

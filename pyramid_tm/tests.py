@@ -8,47 +8,47 @@ class TestDefaultCommitVeto(unittest.TestCase):
 
     def test_it_true_500(self):
         response = DummyResponse('500 Server Error')
-        self.failUnless(self._callFUT(response))
+        self.assertTrue(self._callFUT(response))
 
     def test_it_true_503(self):
         response = DummyResponse('503 Service Unavailable')
-        self.failUnless(self._callFUT(response))
+        self.assertTrue(self._callFUT(response))
 
     def test_it_true_400(self):
         response = DummyResponse('400 Bad Request')
-        self.failUnless(self._callFUT(response))
+        self.assertTrue(self._callFUT(response))
 
     def test_it_true_411(self):
         response = DummyResponse('411 Length Required')
-        self.failUnless(self._callFUT(response))
+        self.assertTrue(self._callFUT(response))
 
     def test_it_false_200(self):
         response = DummyResponse('200 OK')
-        self.failIf(self._callFUT(response))
+        self.assertFalse(self._callFUT(response))
 
     def test_it_false_201(self):
         response = DummyResponse('201 Created')
-        self.failIf(self._callFUT(response))
+        self.assertFalse(self._callFUT(response))
 
     def test_it_false_301(self):
         response = DummyResponse('301 Moved Permanently')
-        self.failIf(self._callFUT(response))
+        self.assertFalse(self._callFUT(response))
 
     def test_it_false_302(self):
         response = DummyResponse('302 Found')
-        self.failIf(self._callFUT(response))
+        self.assertFalse(self._callFUT(response))
 
     def test_it_false_x_tm_commit(self):
         response = DummyResponse('200 OK', {'x-tm':'commit'})
-        self.failIf(self._callFUT(response))
+        self.assertFalse(self._callFUT(response))
 
     def test_it_true_x_tm_abort(self):
         response = DummyResponse('200 OK', {'x-tm':'abort'})
-        self.failUnless(self._callFUT(response))
+        self.assertTrue(self._callFUT(response))
 
     def test_it_true_x_tm_anythingelse(self):
         response = DummyResponse('200 OK', {'x-tm':''})
-        self.failUnless(self._callFUT(response))
+        self.assertTrue(self._callFUT(response))
 
 class Test_tm_tween_factory(unittest.TestCase):
     def setUp(self):
@@ -207,6 +207,55 @@ class Test_includeme(unittest.TestCase):
         self.assertEqual(config.tweens,
                          [('pyramid_tm.tm_tween_factory', EXCVIEW, None)])
 
+class TestAttempt(unittest.TestCase):
+    def _makeOne(self, manager):
+        from pyramid_tm import Attempt
+        return Attempt(manager)
+
+    def test___enter__(self):
+        manager = DummyManager()
+        inst = self._makeOne(manager)
+        self.assertTrue(inst.__enter__() is manager)
+
+    def test_exit_v_is_not_None(self):
+        manager = DummyManager(retryable='abc')
+        inst = self._makeOne(manager)
+        result = inst.__exit__(None, 'f', None)
+        self.assertTrue(manager.aborted)
+        self.assertEqual(result, 'abc')
+        
+    def test_exit_v_is_None_commit_does_not_raise(self):
+        manager = DummyManager(retryable='abc')
+        inst = self._makeOne(manager)
+        result = inst.__exit__(None, None, None)
+        self.assertTrue(manager.committed)
+        self.assertEqual(result, None)
+
+    def test_exit_v_is_None_commit_raises(self):
+        manager = DummyManager(toraise=ValueError, retryable='abc')
+        inst = self._makeOne(manager)
+        result = inst.__exit__(None, None, None)
+        self.assertTrue(manager.aborted)
+        self.assertEqual(result, 'abc')
+        
+class DummyManager(object):
+    def __init__(self, toraise=None, retryable=False):
+        self.toraise = toraise
+        self.retryable = retryable
+        
+    def __enter__(self):
+        return self
+
+    def commit(self):
+        if self.toraise:
+            raise self.toraise
+        self.committed = True
+
+    def abort(self):
+        self.aborted = True
+
+    def _retryable(self, t, v):
+        return self.retryable
 
 class Dummy(object):
     def __init__(self, **kwargs):
@@ -230,6 +279,10 @@ class DummyTransaction(TransactionManager):
         self.began = 0
         self.committed = 0
         self.aborted = 0
+
+    @property
+    def manager(self):
+        return self
 
     def isDoomed(self):
         return self.doomed
