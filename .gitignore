@@ -11,5 +11,4 @@ dist/
 .tox/
 nosetests.xml
 pyramid_tm/coverage.xml
-env26/
-env32/
+env*/

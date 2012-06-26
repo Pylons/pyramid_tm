@@ -5,6 +5,7 @@ import transaction
 
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
+from pyramid_tm.compat import reraise
 
 resolver = DottedNameResolver(None)
 
@@ -51,23 +52,27 @@ class Attempt(object):
     def __init__(self, manager):
         self.manager = manager
 
+    def _retry_or_raise(self, t, v, tb):
+        retry = self.manager._retryable(t, v)
+        self.manager.abort()
+        if retry:
+            return retry # suppress the exception if necessary
+        reraise(t, v, tb) # otherwise reraise the exception
+        
     def __enter__(self):
         return self.manager.__enter__()
 
     def __exit__(self, t, v, tb):
+
         if v is None:
             try:
                 self.manager.commit()
             except:
                 # this is what transaction 1.2.0 doesn't do (it doesn't
-                # catch exceptions raised by a commit)
-                retry = self.manager._retryable(*sys.exc_info()[:2])
-                self.manager.abort()
-                return retry
+                # suppress retryable exceptions raised by a commit)
+                return self._retry_or_raise(*sys.exc_info())
         else:
-            retry = self.manager._retryable(t, v)
-            self.manager.abort()
-            return retry
+            return self._retry_or_raise(t, v, tb)
             
 def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes

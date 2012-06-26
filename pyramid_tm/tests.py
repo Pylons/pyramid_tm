@@ -231,12 +231,18 @@ class TestAttempt(unittest.TestCase):
         self.assertTrue(manager.committed)
         self.assertEqual(result, None)
 
-    def test_exit_v_is_None_commit_raises(self):
+    def test_exit_v_is_None_commit_raises_retryable(self):
         manager = DummyManager(toraise=ValueError, retryable='abc')
         inst = self._makeOne(manager)
         result = inst.__exit__(None, None, None)
         self.assertTrue(manager.aborted)
         self.assertEqual(result, 'abc')
+
+    def test_exit_v_is_None_commit_raises_nonretryable(self):
+        manager = DummyManager(toraise=ValueError, retryable=False)
+        inst = self._makeOne(manager)
+        self.assertRaises(ValueError, inst.__exit__, None, None, None)
+        self.assertTrue(manager.aborted)
         
 class DummyManager(object):
     def __init__(self, toraise=None, retryable=False):
