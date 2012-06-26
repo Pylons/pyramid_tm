@@ -1,6 +1,9 @@
 Next release
 ------------
 
+Bug Fixes
+~~~~~~~~~
+
 - When a non-retryable exception was raised as the result of a call to
   ``transaction.manager.commit``, the exception was not reraised properly.
   Symptom: an unrecoverable exception such as ``Unsupported: Storing blobs in
