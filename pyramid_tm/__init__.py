@@ -23,14 +23,8 @@ def default_commit_veto(request, response):
     """
     xtm = response.headers.get('x-tm')
     if xtm is not None:
-        if xtm == 'commit':
-            return False
-        return True
-    status = response.status
-    for bad in ('4', '5'):
-        if status.startswith(bad):
-            return True
-    return False
+        return xtm != 'commit'
+    return response.status.startswith(('4', '5'))
 
 class AbortResponse(Exception):
     def __init__(self, response):
@@ -79,11 +73,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
     old_commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
     commit_veto = registry.settings.get('tm.commit_veto', old_commit_veto)
     attempts = int(registry.settings.get('tm.attempts', 1))
-
-    if not commit_veto:
-        commit_veto = None
-    else:
-        commit_veto = resolver.maybe_resolve(commit_veto)
+    commit_veto = resolver.maybe_resolve(commit_veto) if commit_veto else None
 
     def tm_tween(request):
         if 'repoze.tm.active' in request.environ:

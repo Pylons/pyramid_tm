@@ -99,14 +99,8 @@ vetoes a commit if the status code starts with ``4`` or ``5`` or there is a
    def default_commit_veto(request, response):
        xtm = response.headers.get('x-tm')
        if xtm is not None:
-           if xtm == 'commit':
-               return False
-           return True
-       status = response.status
-       for bad in ('4', '5'):
-           if status.startswith(bad):
-               return True
-       return False
+           return xtm != 'commit'
+       return response.status.startswith(('4', '5'))
 
 If you'd like to use this commit veto in your system, you can do it via
 Python:
