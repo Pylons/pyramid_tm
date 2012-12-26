@@ -103,8 +103,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(txn.began)
         self.assertEqual(txn.committed, 1)
         self.assertEqual(txn.aborted, 2)
-        self.assertEqual(self.request.made_seekable, 1)
-        self.assertEqual(self.request.copied, 2)
+        self.assertEqual(self.request.made_seekable, 3)
         self.assertEqual(result, response)
 
     def test_handler_retryable_exception_defaults_to_1(self):
@@ -257,14 +256,9 @@ class DummyRequest(object):
     def __init__(self):
         self.environ = {}
         self.made_seekable = 0
-        self.copied = 0
 
     def make_body_seekable(self):
         self.made_seekable += 1
-
-    def copy(self):
-        self.copied += 1
-        return self
 
 class DummyResponse(object):
     def __init__(self, status='200 OK', headers=None):

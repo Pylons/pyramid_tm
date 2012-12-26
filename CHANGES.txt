@@ -2,12 +2,9 @@ Next release
 ------------
 
 - Disuse the confusing and bug-ridden generator-plus-context-manager "attempts"
-  mechanism from the transaction package for retrying retryable exceptions.
-  Use a simple while loop plus a counter and imperative logic instead.  This
-  fixes an issue where in some cases, a request would not be retried when a
-  commit raised a retryable exception (e.g. ZODB's ConflictError).
-
-- Copy the request on retries instead of just making the body seekable.
+  mechanism from the transaction package for retrying retryable exceptions
+  (e.g. ZODB ConflictError).  Use a simple while loop plus a counter and
+  imperative logic instead.
 
 0.5 (2012-06-26)
 ----------------
