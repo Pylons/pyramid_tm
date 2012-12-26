@@ -30,74 +30,52 @@ class AbortResponse(Exception):
     def __init__(self, response):
         self.response = response
 
-# work around broken "attempts" method of TransactionManager in transaction 
-# 1.2.0
-def _attempts(manager, number=3):
-    assert number > 0
-    while number:
-        number -= 1
-        if number:
-            yield Attempt(manager)
-        else:
-            yield manager
-
-class Attempt(object):
-
-    def __init__(self, manager):
-        self.manager = manager
-
-    def _retry_or_raise(self, t, v, tb):
-        retry = self.manager._retryable(t, v)
-        self.manager.abort()
-        if retry:
-            return retry # suppress the exception if necessary
-        reraise(t, v, tb) # otherwise reraise the exception
-        
-    def __enter__(self):
-        return self.manager.__enter__()
-
-    def __exit__(self, t, v, tb):
-
-        if v is None:
-            try:
-                self.manager.commit()
-            except:
-                # this is what transaction 1.2.0 doesn't do (it doesn't
-                # suppress retryable exceptions raised by a commit)
-                return self._retry_or_raise(*sys.exc_info())
-        else:
-            return self._retry_or_raise(t, v, tb)
-            
 def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes
     old_commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
     commit_veto = registry.settings.get('tm.commit_veto', old_commit_veto)
     attempts = int(registry.settings.get('tm.attempts', 1))
     commit_veto = resolver.maybe_resolve(commit_veto) if commit_veto else None
+    assert attempts > 0
 
     def tm_tween(request):
         if 'repoze.tm.active' in request.environ:
             # don't handle txn mgmt if repoze.tm is in the WSGI pipeline
             return handler(request)
 
-        try:
-            for attempt in _attempts(transaction.manager, attempts):
-                with attempt as t:
-                    # make_body_seekable will copy wsgi.input if necessary,
-                    # otherwise it will rewind the copy to position zero
-                    if attempts != 1:
-                        request.make_body_seekable()
-                    response = handler(request)
-                    if t.isDoomed():
+        manager = transaction.manager
+        number = attempts
+
+        while number:
+            number -= 1
+            try:
+                manager.begin()
+                # make_body_seekable will copy wsgi.input if necessary,
+                # otherwise it will rewind the copy to position zero
+                if attempts != 1:
+                    request.make_body_seekable()
+                response = handler(request)
+                if manager.isDoomed():
+                    raise AbortResponse(response)
+                if commit_veto is not None:
+                    veto = commit_veto(request, response)
+                    if veto:
                         raise AbortResponse(response)
-                    if commit_veto is not None:
-                        veto = commit_veto(request, response)
-                        if veto:
-                            raise AbortResponse(response)
-                    return response
-        except AbortResponse:
-            e = sys.exc_info()[1] # py2.5-py3 compat
-            return e.response
+                manager.commit()
+                return response
+            except AbortResponse:
+                e = sys.exc_info()[1] # py2.5-py3 compat
+                manager.abort()
+                return e.response
+            except:
+                exc_info = sys.exc_info()
+                try:
+                    manager.abort()
+                    retryable = manager._retryable(*exc_info[:-1])
+                    if (number <= 0) or (not retryable):
+                        reraise(*exc_info)
+                finally:
+                    del exc_info # avoid leak
 
     return tm_tween
 

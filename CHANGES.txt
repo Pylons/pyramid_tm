@@ -1,3 +1,11 @@
+Next release
+------------
+
+- Disuse the confusing and bug-ridden generator-plus-context-manager "attempts"
+  mechanism from the transaction package for retrying retryable exceptions
+  (e.g. ZODB ConflictError).  Use a simple while loop plus a counter and
+  imperative logic instead.
+
 0.5 (2012-06-26)
 ----------------
 

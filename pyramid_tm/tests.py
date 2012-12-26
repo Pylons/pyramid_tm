@@ -98,10 +98,11 @@ class Test_tm_tween_factory(unittest.TestCase):
             if len(count) == 3:
                 return response
             raise Conflict
-        result = self._callFUT(handler=handler)
-        self.assertTrue(self.txn.began)
-        self.assertEqual(self.txn.committed, 1)
-        self.assertEqual(self.txn.aborted, 2)
+        txn = DummyTransaction(retryable=True)
+        result = self._callFUT(handler=handler, txn=txn)
+        self.assertTrue(txn.began)
+        self.assertEqual(txn.committed, 1)
+        self.assertEqual(txn.aborted, 2)
         self.assertEqual(self.request.made_seekable, 3)
         self.assertEqual(result, response)
 
@@ -207,62 +208,6 @@ class Test_includeme(unittest.TestCase):
         self.assertEqual(config.tweens,
                          [('pyramid_tm.tm_tween_factory', EXCVIEW, None)])
 
-class TestAttempt(unittest.TestCase):
-    def _makeOne(self, manager):
-        from pyramid_tm import Attempt
-        return Attempt(manager)
-
-    def test___enter__(self):
-        manager = DummyManager()
-        inst = self._makeOne(manager)
-        self.assertTrue(inst.__enter__() is manager)
-
-    def test_exit_v_is_not_None(self):
-        manager = DummyManager(retryable='abc')
-        inst = self._makeOne(manager)
-        result = inst.__exit__(None, 'f', None)
-        self.assertTrue(manager.aborted)
-        self.assertEqual(result, 'abc')
-        
-    def test_exit_v_is_None_commit_does_not_raise(self):
-        manager = DummyManager(retryable='abc')
-        inst = self._makeOne(manager)
-        result = inst.__exit__(None, None, None)
-        self.assertTrue(manager.committed)
-        self.assertEqual(result, None)
-
-    def test_exit_v_is_None_commit_raises_retryable(self):
-        manager = DummyManager(toraise=ValueError, retryable='abc')
-        inst = self._makeOne(manager)
-        result = inst.__exit__(None, None, None)
-        self.assertTrue(manager.aborted)
-        self.assertEqual(result, 'abc')
-
-    def test_exit_v_is_None_commit_raises_nonretryable(self):
-        manager = DummyManager(toraise=ValueError, retryable=False)
-        inst = self._makeOne(manager)
-        self.assertRaises(ValueError, inst.__exit__, None, None, None)
-        self.assertTrue(manager.aborted)
-        
-class DummyManager(object):
-    def __init__(self, toraise=None, retryable=False):
-        self.toraise = toraise
-        self.retryable = retryable
-        
-    def __enter__(self):
-        return self
-
-    def commit(self):
-        if self.toraise:
-            raise self.toraise
-        self.committed = True
-
-    def abort(self):
-        self.aborted = True
-
-    def _retryable(self, t, v):
-        return self.retryable
-
 class Dummy(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -280,15 +225,19 @@ class DummyTransaction(TransactionManager):
     aborted = False
     _resources = []
 
-    def __init__(self, doomed=False):
+    def __init__(self, doomed=False, retryable=False):
         self.doomed = doomed
         self.began = 0
         self.committed = 0
         self.aborted = 0
+        self.retryable = retryable
 
     @property
     def manager(self):
         return self
+
+    def _retryable(self, t, v):
+        return self.retryable
 
     def isDoomed(self):
         return self.doomed
