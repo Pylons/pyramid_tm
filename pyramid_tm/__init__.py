@@ -51,8 +51,11 @@ def tm_tween_factory(handler, registry, transaction=transaction):
             try:
                 manager.begin()
                 # make_body_seekable will copy wsgi.input if necessary,
-                # otherwise it will rewind the copy to position zero
-                if attempts != 1:
+                # otherwise it will rewind the copy to position zero.  We only
+                # do this on the first attempt because if a retryable exception
+                # is raised, we copy the entire request (which calls
+                # make_body_seekable itself).
+                if attempts != 1 and number == (attempts-1):
                     request.make_body_seekable()
                 response = handler(request)
                 if manager.isDoomed():
@@ -74,6 +77,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                     retryable = manager._retryable(*exc_info[:-1])
                     if (number <= 0) or (not retryable):
                         reraise(*exc_info)
+                    request = request.copy()
                 finally:
                     del exc_info # avoid leak
 
@@ -90,9 +94,14 @@ def includeme(config):
     handler (usually the main Pyramid application request handler) to obtain
     a response.  When attempting to call the downstream handler:
 
-    - If an exception is raised by downstream handler while attempting to
-      obtain a response, the transaction will be rolled back
+    - If a non-retryable exception is raised by downstream handler while
+      attempting to obtain a response, the transaction will be rolled back
       (``transaction.abort()`` will be called).
+
+    - If a retryable exception is raised by downstream handler or by the commit
+      itself, and the number of calls to the downstream handler doesn't exceed
+      ``tm.attempts``, the request will be retried (the downstream handler will
+      be called again with the same request data).
 
     - If no exception is raised by the downstream handler, but the
       transaction is doomed (``transaction.doom()`` has been called), the
