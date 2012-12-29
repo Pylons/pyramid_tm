@@ -122,6 +122,11 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(txn.aborted)
         self.assertFalse(txn.committed)
 
+    def test_handler_notes(self):
+        self._callFUT()
+        self.assertEqual(self.txn._note, '/')
+        self.assertEqual(self.txn.username, None)
+
     def test_500_without_commit_veto(self):
         response = DummyResponse()
         response.status = '500 Bad Request'
@@ -239,6 +244,12 @@ class DummyTransaction(TransactionManager):
     def _retryable(self, t, v):
         return self.retryable
 
+    def get(self):
+        return self
+
+    def setUser(self, name, path='/'):
+        self.username = name
+
     def isDoomed(self):
         return self.doomed
 
@@ -252,7 +263,11 @@ class DummyTransaction(TransactionManager):
     def abort(self):
         self.aborted+=1
 
+    def note(self, value):
+        self._note = value
+
 class DummyRequest(object):
+    path = '/'
     def __init__(self):
         self.environ = {}
         self.made_seekable = 0
