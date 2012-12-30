@@ -267,7 +267,7 @@ class DummyTransaction(TransactionManager):
         self._note = value
 
 class DummyRequest(object):
-    path = '/'
+    path_info = '/'
     def __init__(self):
         self.environ = {}
         self.made_seekable = 0

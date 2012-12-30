@@ -66,7 +66,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                         raise AbortResponse(response)
                 t = manager.get()
                 t.setUser(userid, '')
-                t.note(request.path)
+                t.note(request.path_info)
                 manager.commit()
                 return response
             except AbortResponse:
