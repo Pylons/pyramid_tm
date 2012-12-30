@@ -1,5 +1,5 @@
-Next release
-------------
+0.7 (2012-12-30)
+----------------
 
 - Write unauthenticated userid and ``request.path_info`` as transaction
   metadata via ``t.setUser`` and ``t.note`` respectively during a commit.
