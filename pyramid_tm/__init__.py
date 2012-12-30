@@ -57,6 +57,9 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                 # otherwise it will rewind the copy to position zero
                 if attempts != 1:
                     request.make_body_seekable()
+                t = manager.get()
+                t.setUser(userid, '')
+                t.note(request.path_info)
                 response = handler(request)
                 if manager.isDoomed():
                     raise AbortResponse(response)
@@ -64,9 +67,6 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                     veto = commit_veto(request, response)
                     if veto:
                         raise AbortResponse(response)
-                t = manager.get()
-                t.setUser(userid, '')
-                t.note(request.path_info)
                 manager.commit()
                 return response
             except AbortResponse:
