@@ -11,5 +11,6 @@ Glossary
 
    transaction
       A database transaction comprises a unit of work performed within a
-      database management system.  Within this context it is also the
-      name of a `Python distribution <http://pypi.python.org/pypi/transaction>`_.
+      database management system.  In the context of the Pyramid documentation,
+      "transaction" is also the name of a `Python package 
+      <http://pypi.python.org/pypi/transaction>`_ used by pyramid_tm.
