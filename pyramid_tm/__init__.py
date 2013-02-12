@@ -58,7 +58,8 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                 if attempts != 1:
                     request.make_body_seekable()
                 t = manager.get()
-                t.setUser(userid, '')
+                if userid:
+                    t.setUser(userid, '')
                 t.note(request.path_info)
                 response = handler(request)
                 if manager.isDoomed():

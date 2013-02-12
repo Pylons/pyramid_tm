@@ -229,6 +229,7 @@ class DummyTransaction(TransactionManager):
     committed = False
     aborted = False
     _resources = []
+    username = None
 
     def __init__(self, doomed=False, retryable=False):
         self.doomed = doomed
@@ -250,7 +251,7 @@ class DummyTransaction(TransactionManager):
         return self
 
     def setUser(self, name, path='/'):
-        self.username = name
+        self.username = "%s %s" % (path, name)
 
     def isDoomed(self):
         return self.doomed
