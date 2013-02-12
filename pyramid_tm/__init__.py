@@ -76,8 +76,8 @@ def tm_tween_factory(handler, registry, transaction=transaction):
             except:
                 exc_info = sys.exc_info()
                 try:
-                    manager.abort()
                     retryable = manager._retryable(*exc_info[:-1])
+                    manager.abort()
                     if (number <= 0) or (not retryable):
                         reraise(*exc_info)
                 finally:

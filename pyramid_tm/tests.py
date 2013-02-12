@@ -56,7 +56,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.request = DummyRequest()
         self.response = DummyResponse()
         self.registry = DummyRegistry()
-        
+
     def _callFUT(self, handler=None, registry=None, request=None, txn=None):
         if handler is None:
             def handler(request):
@@ -114,7 +114,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         def handler(request, count=count):
             raise Conflict
         self.assertRaises(Conflict, self._callFUT, handler=handler)
-        
+
     def test_handler_isdoomed(self):
         txn = DummyTransaction(True)
         self._callFUT(txn=txn)
@@ -236,13 +236,15 @@ class DummyTransaction(TransactionManager):
         self.committed = 0
         self.aborted = 0
         self.retryable = retryable
+        self.active = False
 
     @property
     def manager(self):
         return self
 
     def _retryable(self, t, v):
-        return self.retryable
+        if self.active:
+            return self.retryable
 
     def get(self):
         return self
@@ -255,12 +257,14 @@ class DummyTransaction(TransactionManager):
 
     def begin(self):
         self.began+=1
+        self.active = True
         return self
 
     def commit(self):
         self.committed+=1
 
     def abort(self):
+        self.active = False
         self.aborted+=1
 
     def note(self, value):
