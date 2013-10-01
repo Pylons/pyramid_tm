@@ -10,7 +10,7 @@ Overview
 the active :term:`transaction` as provided by the Python `transaction 
 <http://pypi.python.org/pypi/transaction>`_ package. (See the `documentation
 for the transaction package 
-<http://www.zodb.org/zodbbook/transactions.html#data-managers>`_ for an
+<http://www.zodb.org/en/latest/documentation/guide/transactions.html>`_ for an
 explanation of what "joining the active transaction" means).
 
 Installation
