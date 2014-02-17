@@ -54,7 +54,7 @@ class TestDefaultCommitVeto(unittest.TestCase):
 class Test_tm_tween_factory(unittest.TestCase):
     def setUp(self):
         self.txn = DummyTransaction()
-        self.request = DummyRequest15()
+        self.request = DummyRequest()
         self.response = DummyResponse()
         self.registry = DummyRegistry()
 
@@ -73,7 +73,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         return factory(request)
 
     def test_repoze_tm_active(self):
-        request = DummyRequest15()
+        request = DummyRequest()
         request.environ['repoze.tm.active'] = True
         result = self._callFUT(request=request)
         self.assertEqual(result, self.response)
@@ -272,19 +272,10 @@ class DummyTransaction(TransactionManager):
     def note(self, value):
         self._note = value
 
-class DummyRequest(object):
-    path_info = '/'
-    def __init__(self):
-        self.environ = {}
-        self.made_seekable = 0
-
-    def make_body_seekable(self):
-        self.made_seekable += 1
-
-class DummyRequest15(testing.DummyRequest):
+class DummyRequest(testing.DummyRequest):
     def __init__(self, *args, **kwargs):
         self.made_seekable = 0
-        super(DummyRequest15, self).__init__(self, *args, **kwargs)
+        super(DummyRequest, self).__init__(self, *args, **kwargs)
 
     def make_body_seekable(self):
         self.made_seekable += 1
