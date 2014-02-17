@@ -1,5 +1,6 @@
 import unittest
 from transaction import TransactionManager
+from pyramid import testing
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -53,7 +54,7 @@ class TestDefaultCommitVeto(unittest.TestCase):
 class Test_tm_tween_factory(unittest.TestCase):
     def setUp(self):
         self.txn = DummyTransaction()
-        self.request = DummyRequest()
+        self.request = DummyRequest15()
         self.response = DummyResponse()
         self.registry = DummyRegistry()
 
@@ -72,7 +73,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         return factory(request)
 
     def test_repoze_tm_active(self):
-        request = DummyRequest()
+        request = DummyRequest15()
         request.environ['repoze.tm.active'] = True
         result = self._callFUT(request=request)
         self.assertEqual(result, self.response)
@@ -276,6 +277,14 @@ class DummyRequest(object):
     def __init__(self):
         self.environ = {}
         self.made_seekable = 0
+
+    def make_body_seekable(self):
+        self.made_seekable += 1
+
+class DummyRequest15(testing.DummyRequest):
+    def __init__(self, *args, **kwargs):
+        self.made_seekable = 0
+        super(DummyRequest15, self).__init__(self, *args, **kwargs)
 
     def make_body_seekable(self):
         self.made_seekable += 1
