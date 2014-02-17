@@ -6,7 +6,6 @@ import transaction
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
 from pyramid_tm.compat import reraise
-from pyramid.security import unauthenticated_userid
 
 resolver = DottedNameResolver(None)
 
@@ -47,7 +46,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
         manager = transaction.manager
         number = attempts
 
-        userid = unauthenticated_userid(request)
+        userid = request.unauthenticated_userid
 
         while number:
             number -= 1
