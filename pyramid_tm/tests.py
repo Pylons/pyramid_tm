@@ -268,6 +268,7 @@ class DummyTransaction(TransactionManager):
 
 class DummyRequest(object):
     path_info = '/'
+    unauthenticated_userid = None
     def __init__(self):
         self.environ = {}
         self.made_seekable = 0
