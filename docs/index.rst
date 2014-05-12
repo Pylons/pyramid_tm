@@ -1,11 +1,17 @@
 pyramid_tm
 ==========
 
+.. _overview: 
+
 Overview
 --------
 
 ``pyramid_tm`` is a package which allows :term:`Pyramid` requests to join
-the active :term:`transaction` as provided by the :term:`transaction` package.
+the active :term:`transaction` as provided by the Python `transaction 
+<http://pypi.python.org/pypi/transaction>`_ package. (See the `documentation
+for the transaction package 
+<http://zodb.readthedocs.org/en/latest/transactions.html>`_ for an
+explanation of what "joining the active transaction" means).
 
 Installation
 ------------
@@ -48,7 +54,7 @@ a new transaction is associated with that request.
 
 At the beginning of a request a new :term:`transaction` is started
 using the ``transaction.begin()`` function.  Once the request has
-finished all of it's works (ie views have finished running), a few checks
+finished all of its works (ie views have finished running), a few checks
 are tested:
 
   1) Did some a transaction.doom() cause the transaction to become "doomed"?

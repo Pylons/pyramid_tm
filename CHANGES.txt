@@ -3,6 +3,13 @@ Next release
 
 - Fix unit tests under Pyramid 1.5.
 
+- Fix a bug preventing retryable exceptions from actually being retried.
+  https://github.com/Pylons/pyramid_tm/pull/8
+
+- Don't call `setUser` on transaction if there is no user logged in.
+  This could cause the username set on the transaction to be a strange
+  string: " None". https://github.com/Pylons/pyramid_tm/pull/9
+
 0.7 (2012-12-30)
 ----------------
 
