@@ -47,7 +47,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
             return handler(request)
 
         if activate is not None:
-            if not activate(request, response):
+            if not activate(request):
                 return handler(request)
 
         manager = transaction.manager

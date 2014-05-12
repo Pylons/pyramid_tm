@@ -217,10 +217,10 @@ def veto_true(request, response):
 def veto_false(request, response):
     return False
 
-def activate_true(request, response):
+def activate_true(request):
     return True
 
-def activate_false(request, response):
+def activate_false(request):
     return True
 
 class Test_includeme(unittest.TestCase):
