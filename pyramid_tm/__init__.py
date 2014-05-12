@@ -35,14 +35,20 @@ def tm_tween_factory(handler, registry, transaction=transaction):
     # transaction parameterized for testing purposes
     old_commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
     commit_veto = registry.settings.get('tm.commit_veto', old_commit_veto)
+    activate = registry.settings.get('tm.should_activate')
     attempts = int(registry.settings.get('tm.attempts', 1))
     commit_veto = resolver.maybe_resolve(commit_veto) if commit_veto else None
+    activate = resolver.maybe_resolve(activate) if activate else None
     assert attempts > 0
 
     def tm_tween(request):
         if 'repoze.tm.active' in request.environ:
             # don't handle txn mgmt if repoze.tm is in the WSGI pipeline
             return handler(request)
+
+        if activate is not None:
+            if not activate(request, response):
+                return handler(request)
 
         manager = transaction.manager
         number = attempts
