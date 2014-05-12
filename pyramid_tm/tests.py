@@ -78,6 +78,13 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
 
+    def test_tm_should_activate(self):
+        request = DummyRequest()
+        request.environ['tm.should_activate'] = True
+        result = self._callFUT(request=request)
+        self.assertEqual(result, self.response)
+        self.assertFalse(self.txn.began)
+
     def test_handler_exception(self):
         def handler(request):
             raise NotImplementedError
