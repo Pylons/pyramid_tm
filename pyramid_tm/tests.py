@@ -80,14 +80,14 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_should_activate_true(self):
         registry = DummyRegistry(
-            {'tm.activate':'pyramid_tm.tests.activate_true'})
+            {'tm.activate_hook':'pyramid_tm.tests.activate_true'})
         result = self._callFUT(registry=registry)
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
 
     def test_should_activate_false(self):
         registry = DummyRegistry(
-            {'tm.activate':'pyramid_tm.tests.activate_false'})
+            {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
         result = self._callFUT(registry=registry)
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
