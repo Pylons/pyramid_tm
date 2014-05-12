@@ -78,10 +78,17 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
 
-    def test_tm_should_activate(self):
-        request = DummyRequest()
-        request.environ['tm.should_activate'] = True
-        result = self._callFUT(request=request)
+    def test_should_activate_true(self):
+        registry = DummyRegistry(
+            {'tm.should_activate':'pyramid_tm.tests.activate_true'})
+        result = self._callFUT(registry=registry)
+        self.assertEqual(result, self.response)
+        self.assertTrue(self.txn.began)
+
+    def test_should_activate_false(self):
+        registry = DummyRegistry(
+            {'tm.should_activate':'pyramid_tm.tests.activate_false'})
+        result = self._callFUT(registry=registry)
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
 
@@ -210,6 +217,11 @@ def veto_true(request, response):
 def veto_false(request, response):
     return False
 
+def activate_true(request, response):
+    return True
+
+def activate_false(request, response):
+    return True
 
 class Test_includeme(unittest.TestCase):
     def test_it(self):
