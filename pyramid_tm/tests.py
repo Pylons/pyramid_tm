@@ -221,7 +221,7 @@ def activate_true(request):
     return True
 
 def activate_false(request):
-    return True
+    return False
 
 class Test_includeme(unittest.TestCase):
     def test_it(self):
