@@ -1,5 +1,6 @@
 import unittest
 from transaction import TransactionManager
+from pyramid import testing
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -271,12 +272,10 @@ class DummyTransaction(TransactionManager):
     def note(self, value):
         self._note = value
 
-class DummyRequest(object):
-    path_info = '/'
-    unauthenticated_userid = None
-    def __init__(self):
-        self.environ = {}
+class DummyRequest(testing.DummyRequest):
+    def __init__(self, *args, **kwargs):
         self.made_seekable = 0
+        super(DummyRequest, self).__init__(self, *args, **kwargs)
 
     def make_body_seekable(self):
         self.made_seekable += 1

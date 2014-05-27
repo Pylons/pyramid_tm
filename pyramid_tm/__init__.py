@@ -46,8 +46,11 @@ def tm_tween_factory(handler, registry, transaction=transaction):
 
         manager = transaction.manager
         number = attempts
+        if hasattr(request, 'unauthenticated_userid'):
+            userid = request.unauthenticated_userid
+        else:
+            userid = unauthenticated_userid(request)
 
-        userid = unauthenticated_userid(request)
 
         while number:
             number -= 1
