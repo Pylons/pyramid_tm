@@ -57,6 +57,10 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.request = DummyRequest()
         self.response = DummyResponse()
         self.registry = DummyRegistry()
+        self.config = testing.setUp()
+
+    def tearDown(self):
+        testing.tearDown()
 
     def _callFUT(self, handler=None, registry=None, request=None, txn=None):
         if handler is None:
@@ -127,6 +131,11 @@ class Test_tm_tween_factory(unittest.TestCase):
         self._callFUT()
         self.assertEqual(self.txn._note, '/')
         self.assertEqual(self.txn.username, None)
+
+    def test_handler_w_unauthenticated_userid(self):
+        self.config.testing_securitypolicy(userid='phred')
+        self._callFUT()
+        self.assertEqual(self.txn.username, ' phred')
 
     def test_500_without_commit_veto(self):
         response = DummyResponse()
