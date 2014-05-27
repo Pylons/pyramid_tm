@@ -6,7 +6,6 @@ import transaction
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
 from pyramid_tm.compat import reraise
-from pyramid.security import unauthenticated_userid
 
 resolver = DottedNameResolver(None)
 
@@ -49,6 +48,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
         if hasattr(request, 'unauthenticated_userid'):
             userid = request.unauthenticated_userid
         else: #pragma NO COVER deprecated
+            from pyramid.security import unauthenticated_userid
             userid = unauthenticated_userid(request)
 
 
