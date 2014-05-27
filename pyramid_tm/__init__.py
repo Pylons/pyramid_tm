@@ -48,7 +48,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
         number = attempts
         if hasattr(request, 'unauthenticated_userid'):
             userid = request.unauthenticated_userid
-        else:
+        else: #pragma NO COVER deprecated
             userid = unauthenticated_userid(request)
 
 
