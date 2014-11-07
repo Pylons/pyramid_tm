@@ -98,3 +98,4 @@ Contributors
 ------------
 
 - Rocky Burt, 2011/02/21
+- Truveris, Ryan P. Kelly, 2014/11/07
