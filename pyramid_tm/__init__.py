@@ -63,7 +63,10 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                 t = manager.get()
                 if userid:
                     t.setUser(userid, '')
-                t.note(request.path_info)
+                try:
+                    t.note(request.path_info)
+                except UnicodeDecodeError:
+                    t.note("Unable to decode path as unicode")
                 response = handler(request)
                 if manager.isDoomed():
                     raise AbortResponse(response)
