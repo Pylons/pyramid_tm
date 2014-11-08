@@ -127,15 +127,10 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(txn.aborted)
         self.assertFalse(txn.committed)
 
-    def test_handler_notes(self):
-        self._callFUT()
-        self.assertEqual(self.txn._note, '/')
-        self.assertEqual(self.txn.username, None)
-
     def test_handler_notes_unicode_decode_error(self):
         class DummierRequest(DummyRequest):
             def _get_path_info(self):
-                "\xc0".decode("utf-8")
+                b"\xc0".decode("utf-8")
             def _set_path_info(self, val):
                 pass
             path_info = property(_get_path_info, _set_path_info)
