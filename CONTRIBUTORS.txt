@@ -102,3 +102,4 @@ Contributors
 - Tres Seaver, 2013/01/01
 - Kridsada Thanabulpong, 2013/01/22
 - Truveris, Ryan P. Kelly, 2014/11/07
+- Gavin Carothers, 2014/11/11
