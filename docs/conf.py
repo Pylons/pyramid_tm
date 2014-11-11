@@ -18,6 +18,7 @@
 #sys.path.append(os.path.abspath('some/directory'))
 
 import sys, os
+import pkg_resources
 
 # Add and use Pylons theme
 if 'sphinx-build' in ' '.join(sys.argv): # protect against dumb importers
@@ -86,7 +87,7 @@ copyright = '2011, Agendaless Consulting <chrism@plope.com>'
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = '0.7'
+version = pkg_resources.get_distribution('pyramid_tm').version
 # The full version, including alpha/beta/rc tags.
 release = version
 
