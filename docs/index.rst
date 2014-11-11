@@ -73,14 +73,58 @@ instead committed using ``transaction.commit()``.
 
 By itself, this :term:`transaction` machinery doesn't do much.  It is up to
 third-party code to *join* the active transaction to benefit.  See
-`repoze.filesafe <http://pypi.python.org/pypi/repoze.filesafe>`_ for an
+`repoze.filesafe <https://pypi.python.org/pypi/repoze.filesafe>`_ for an
 example of how files creation can be committed or rolled back based on
 :term:`transaction` and the `pyramid_mailer
 <http://docs.pylonsproject.org/projects/pyramid_mailer/dev/>`_ package to see
 how you can prevent emails from being sent until a transaction succeeeds.
 ZODB database connections are automatically joined to the transaction, as
 well as SQLAlchemy connections which are configured with the
-``ZopeTransactionExtension`` extension.
+``ZopeTransactionExtension`` extension from the `zope.sqlalchemy
+<https://pypi.python.org/pypi/zope.sqlalchemy>`_ package.
+
+Adding an Activation Hook
+-------------------------
+
+It may not always be desireable to have every request managed by the
+transaction manager automatically. It is possible to configure ``pyramid_tm``
+with an "activate" hook. The callback function receives the request. It
+can then examine it and return ``False`` if the transaction manager should
+be disabled for that request.
+
+.. code-block:: python
+   :linenos:
+
+   def activate_hook(request):
+       if request.path_info.startswith('/long-poll'):
+           # Allow the long-poll class to manage its own connections to avoid
+           # long-lived transactions.
+           return False
+       return True
+
+To enable this hook, add it as the ``tm.activate_hook`` setting in your app.
+
+.. code-block:: python
+   :linenos:
+
+   from pyramid.config import Configurator
+
+   def app(global_conf, **settings):
+       settings['tm.activate_hook'] = activate_hook
+       config = Configurator(settings=settings)
+       config.include('pyramid_tm')
+       # ...
+
+Or via PasteDeploy:
+
+.. code-block:: ini
+   :linenos:
+
+   [app:myapp]
+   tm.activate_hook = myapp.activate_hook
+
+In either configuration the value for ``tm.activate_hook`` is a
+:term:`dotted Python name`.
 
 Adding a Commit Veto Hook
 -------------------------
@@ -116,10 +160,11 @@ Python:
 
    from pyramid.config import Configurator
 
-   def app(global_conf, settings):
+   def app(global_conf, **settings):
        settings['tm.commit_veto'] = 'pyramid_tm.default_commit_veto'
        config = Configurator(settings=settings)
        config.include('pyramid_tm')
+       # ...
 
 Or via PasteDeploy:
 
@@ -155,9 +200,9 @@ Via PasteDeploy:
    [app:myapp]
    tm.commit_veto = my.package.commit_veto
 
-In the PasteDeploy example, the path is a Python dotted name, where the dots
-separate module and package names, and the colon separates a module from its
-contents.  In the above example, the code would be implemented as a
+In the PasteDeploy example, the path is a :term:`dotted Python name`, where
+the dots separate module and package names, and the colon separates a module
+from its contents.  In the above example, the code would be implemented as a
 "commit_veto" function which lives in the "package" submodule of the "my"
 package.
 

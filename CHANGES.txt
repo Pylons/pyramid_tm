@@ -1,6 +1,11 @@
 Next release
 ------------
 
+- Add a new ``tm.activate_hook`` hook which can control when the
+  transaction manager is active. For example, this may be useful in
+  situations where the manager should be disabled for a particular URL.
+  https://github.com/Pylons/pyramid_tm/pull/12
+
 - Fix unit tests under Pyramid 1.5.
 
 - Fix a bug preventing retryable exceptions from actually being retried.
