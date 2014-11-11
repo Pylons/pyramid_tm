@@ -83,6 +83,20 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
 
+    def test_should_activate_true(self):
+        registry = DummyRegistry(
+            {'tm.activate_hook':'pyramid_tm.tests.activate_true'})
+        result = self._callFUT(registry=registry)
+        self.assertEqual(result, self.response)
+        self.assertTrue(self.txn.began)
+
+    def test_should_activate_false(self):
+        registry = DummyRegistry(
+            {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
+        result = self._callFUT(registry=registry)
+        self.assertEqual(result, self.response)
+        self.assertFalse(self.txn.began)
+
     def test_handler_exception(self):
         def handler(request):
             raise NotImplementedError
@@ -227,6 +241,11 @@ def veto_true(request, response):
 def veto_false(request, response):
     return False
 
+def activate_true(request):
+    return True
+
+def activate_false(request):
+    return False
 
 class Test_includeme(unittest.TestCase):
     def test_it(self):
