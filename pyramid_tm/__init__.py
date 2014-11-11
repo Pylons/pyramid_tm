@@ -1,5 +1,3 @@
-from __future__ import with_statement
-
 import sys
 import transaction
 
@@ -56,7 +54,6 @@ def tm_tween_factory(handler, registry, transaction=transaction):
         else: #pragma NO COVER deprecated
             from pyramid.security import unauthenticated_userid
             userid = unauthenticated_userid(request)
-
 
         while number:
             number -= 1
