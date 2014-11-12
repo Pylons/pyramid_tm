@@ -1,5 +1,5 @@
-Next release
-------------
+0.8 (2014-11-12)
+----------------
 
 - Add a new ``tm.activate_hook`` hook which can control when the
   transaction manager is active. For example, this may be useful in
