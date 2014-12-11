@@ -70,7 +70,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                 try:
                     t.note(bytes_(request.path_info, encoding='utf-8'))
                 except UnicodeDecodeError:
-                    t.note('Unable to decode path as unicode')
+                    t.note("Unable to decode path as unicode")
                 response = handler(request)
                 if manager.isDoomed():
                     raise AbortResponse(response)
