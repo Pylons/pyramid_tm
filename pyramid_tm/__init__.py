@@ -3,8 +3,7 @@ import transaction
 
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
-from pyramid.compat import bytes_
-from pyramid_tm.compat import reraise
+from pyramid_tm.compat import reraise, compat_str
 
 resolver = DottedNameResolver(None)
 
@@ -68,7 +67,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                 if userid:
                     t.setUser(userid, '')
                 try:
-                    t.note(bytes_(request.path_info, encoding='utf-8'))
+                    t.note(compat_str(request.path_info))
                 except UnicodeDecodeError:
                     t.note("Unable to decode path as unicode")
                 response = handler(request)
