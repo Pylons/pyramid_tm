@@ -1,5 +1,4 @@
 import sys
-from pyramid.compat import bytes_
 
 PY3 = sys.version_info[0] == 3
 
@@ -29,10 +28,3 @@ else: # pragma: no cover
     exec_("""def reraise(tp, value, tb=None):
     raise tp, value, tb
 """)
-
-
-def compat_str(s):
-    """If we are not on PY3, encode ``s``"""
-    if not PY3:  # pragma: no cover
-        return bytes_(s, encoding='utf-8')
-    return s
