@@ -155,6 +155,39 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(self.txn._note, 'Unable to decode path as unicode')
         self.assertEqual(self.txn.username, None)
 
+    def test_handler_notes_unicode_path(self):
+        class DummierRequest(DummyRequest):
+
+            def _get_path_info(self):
+                return u'some/path/\u0442\u0435\u0441\u0442'
+
+            def _set_path_info(self, val):
+                pass
+
+            path_info = property(_get_path_info, _set_path_info)
+
+        request = DummierRequest()
+        self._callFUT(request=request)
+        self.assertEqual('some/path/\xd1\x82\xd0\xb5\xd1\x81\xd1\x82',
+                         self.txn._note)
+        self.assertEqual(self.txn.username, None)
+
+    def test_handler_notes_native_path(self):
+        class DummierRequest(DummyRequest):
+
+            def _get_path_info(self):
+                return 'some/resource'
+
+            def _set_path_info(self, val):
+                pass
+
+            path_info = property(_get_path_info, _set_path_info)
+
+        request = DummierRequest()
+        self._callFUT(request=request)
+        self.assertEqual('some/resource', self.txn._note)
+        self.assertEqual(self.txn.username, None)
+
     def test_handler_notes(self):
         self._callFUT()
         self.assertEqual(self.txn._note, '/')
