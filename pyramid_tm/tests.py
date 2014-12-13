@@ -159,7 +159,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         class DummierRequest(DummyRequest):
 
             def _get_path_info(self):
-                return u'some/path/\u0442\u0435\u0441\u0442'
+                return 'collection/\xd1\x80\xd0\xb5\xd1\x81'.decode('utf-8')
 
             def _set_path_info(self, val):
                 pass
@@ -168,11 +168,10 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        self.assertEqual('some/path/\xd1\x82\xd0\xb5\xd1\x81\xd1\x82',
-                         self.txn._note)
+        self.assertEqual('collection/\xd1\x80\xd0\xb5\xd1\x81', self.txn._note)
         self.assertEqual(self.txn.username, None)
 
-    def test_handler_notes_native_path(self):
+    def test_handler_notes_native_str_path(self):
         class DummierRequest(DummyRequest):
 
             def _get_path_info(self):
