@@ -3,7 +3,6 @@
 import unittest
 from transaction import TransactionManager
 from pyramid import testing
-from pyramid_tm.compat import PY3
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -159,6 +158,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(self.txn.username, None)
 
     def test_handler_notes_unicode_path(self):
+        from pyramid_tm.compat import PY3
         class DummierRequest(DummyRequest):
 
             def _get_path_info(self):
@@ -171,7 +171,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        if PY3:
+        if PY3:  # pragma: no cover Py3k
             self.assertEqual('collection/рес', self.txn._note)
         else:
             self.assertEqual('collection/\xd1\x80\xd0\xb5\xd1\x81',
