@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 from transaction import TransactionManager
 from pyramid import testing
+from pyramid_tm.compat import PY3
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -153,6 +156,42 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         self._callFUT(request=request)
         self.assertEqual(self.txn._note, 'Unable to decode path as unicode')
+        self.assertEqual(self.txn.username, None)
+
+    def test_handler_notes_unicode_path(self):
+        class DummierRequest(DummyRequest):
+
+            def _get_path_info(self):
+                return b'collection/\xd1\x80\xd0\xb5\xd1\x81'.decode('utf-8')
+
+            def _set_path_info(self, val):
+                pass
+
+            path_info = property(_get_path_info, _set_path_info)
+
+        request = DummierRequest()
+        self._callFUT(request=request)
+        if PY3:
+            self.assertEqual('collection/рес', self.txn._note)
+        else:
+            self.assertEqual('collection/\xd1\x80\xd0\xb5\xd1\x81',
+                             self.txn._note)
+        self.assertEqual(self.txn.username, None)
+
+    def test_handler_notes_native_str_path(self):
+        class DummierRequest(DummyRequest):
+
+            def _get_path_info(self):
+                return 'some/resource'
+
+            def _set_path_info(self, val):
+                pass
+
+            path_info = property(_get_path_info, _set_path_info)
+
+        request = DummierRequest()
+        self._callFUT(request=request)
+        self.assertEqual('some/resource', self.txn._note)
         self.assertEqual(self.txn.username, None)
 
     def test_handler_notes(self):

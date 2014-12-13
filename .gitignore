@@ -14,3 +14,4 @@ pyramid_tm/coverage.xml
 env*/
 venv/
 coverage.xml
+.idea/
