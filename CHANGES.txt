@@ -1,3 +1,9 @@
+Unreleased
+----------
+
+- Work around recording transaction notes containing unicode.
+  https://github.com/Pylons/pyramid_tm/pull/25
+
 0.8 (2014-11-12)
 ----------------
 
