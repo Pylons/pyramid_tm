@@ -3,7 +3,7 @@
 import unittest
 from transaction import TransactionManager
 from pyramid import testing
-from compat import PY3
+from pyramid_tm.compat import PY3
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
