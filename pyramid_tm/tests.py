@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+
 import unittest
 from transaction import TransactionManager
 from pyramid import testing
+from compat import PY3
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -168,7 +171,11 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        self.assertEqual(b'collection/\xd1\x80\xd0\xb5\xd1\x81', self.txn._note)
+        if PY3:
+            self.assertEqual('collection/рес', self.txn._note)
+        else:
+            self.assertEqual('collection/\xd1\x80\xd0\xb5\xd1\x81',
+                             self.txn._note)
         self.assertEqual(self.txn.username, None)
 
     def test_handler_notes_native_str_path(self):
