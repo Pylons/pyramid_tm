@@ -143,6 +143,28 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(txn.aborted)
         self.assertFalse(txn.committed)
 
+    def test_handler_w_native_unauthenticated_userid(self):
+        self.config.testing_securitypolicy(userid='phred')
+        self._callFUT()
+        self.assertEqual(self.txn.username, ' phred')
+
+    def test_handler_w_unicode_unauthenticated_userid(self):
+        from pyramid.compat import native_
+        from pyramid_tm.compat import PY3
+        USERID = b'phred/\xd1\x80\xd0\xb5\xd1\x81'.decode('utf-8')
+        self.config.testing_securitypolicy(userid=USERID)
+        self._callFUT()
+        if PY3:  # pragma: no cover Py3k
+            self.assertEqual(self.txn.username, ' phred/рес')
+        else:
+            self.assertEqual(self.txn.username,
+                             ' ' + native_(USERID, 'utf-8'))
+
+    def test_handler_notes(self):
+        self._callFUT()
+        self.assertEqual(self.txn._note, '/')
+        self.assertEqual(self.txn.username, None)
+
     def test_handler_notes_unicode_decode_error(self):
         class DummierRequest(DummyRequest):
             def _get_path_info(self):
@@ -172,10 +194,10 @@ class Test_tm_tween_factory(unittest.TestCase):
         request = DummierRequest()
         self._callFUT(request=request)
         if PY3:  # pragma: no cover Py3k
-            self.assertEqual('collection/рес', self.txn._note)
+            self.assertEqual(self.txn._note, 'collection/рес')
         else:
-            self.assertEqual('collection/\xd1\x80\xd0\xb5\xd1\x81',
-                             self.txn._note)
+            self.assertEqual(self.txn._note,
+                             'collection/\xd1\x80\xd0\xb5\xd1\x81')
         self.assertEqual(self.txn.username, None)
 
     def test_handler_notes_native_str_path(self):
@@ -191,18 +213,8 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        self.assertEqual('some/resource', self.txn._note)
+        self.assertEqual(self.txn._note, 'some/resource')
         self.assertEqual(self.txn.username, None)
-
-    def test_handler_notes(self):
-        self._callFUT()
-        self.assertEqual(self.txn._note, '/')
-        self.assertEqual(self.txn.username, None)
-
-    def test_handler_w_unauthenticated_userid(self):
-        self.config.testing_securitypolicy(userid='phred')
-        self._callFUT()
-        self.assertEqual(self.txn.username, ' phred')
 
     def test_500_without_commit_veto(self):
         response = DummyResponse()

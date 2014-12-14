@@ -66,6 +66,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
                     request.make_body_seekable()
                 t = manager.get()
                 if userid:
+                    userid = native_(userid, 'utf-8')
                     t.setUser(userid, '')
                 try:
                     t.note(native_(request.path_info, 'utf-8'))

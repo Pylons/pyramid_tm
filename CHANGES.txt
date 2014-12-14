@@ -1,6 +1,10 @@
 Unreleased
 ----------
 
+- Work around recording transaction userid containing unicode.
+  See https://github.com/Pylons/pyramid_tm/pull/15, although the fix
+  is different, to ensure Python3 compatibility.
+
 - Work around recording transaction notes containing unicode.
   https://github.com/Pylons/pyramid_tm/pull/25
 
