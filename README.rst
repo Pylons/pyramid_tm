@@ -1,6 +1,13 @@
 ``pyramid_tm``
 ==============
 
+.. image:: https://travis-ci.org/Pylons/pyramid_tm.png?branch=master
+        :target: https://travis-ci.org/Pylons/pyramid_tm
+
+.. image:: https://readthedocs.org/projects/pyramid_tm/badge/?version=master
+        :target: http://docs.pylonsproject.org/projects/pyramid_tm/en/master/
+        :alt: Documentation Status
+
 ``pyramid_tm`` is a package which allows Pyramid requests to join
 the active transaction as provided by the `transaction
 <http://pypi.python.org/pypi/transaction>`_ package.
