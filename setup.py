@@ -19,7 +19,7 @@ from setuptools import setup, find_packages
 here = os.path.abspath(os.path.dirname(__file__))
 try:
     README = open(os.path.join(here, 'README.rst')).read()
-    CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+    CHANGES = open(os.path.join(here, 'CHANGES.rst')).read()
 except IOError:
     README = CHANGES = ''
 
@@ -32,7 +32,7 @@ testing_extras = ['nose', 'coverage']
 docs_extras = ['Sphinx']
 
 setup(name='pyramid_tm',
-      version='0.8',
+      version='0.9',
       description=('A package which allows Pyramid requests to join the '
                    'active transaction'),
       long_description=README + '\n\n' + CHANGES,

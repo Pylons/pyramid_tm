@@ -1,5 +1,8 @@
-Unreleased
-----------
+Changes
+=======
+
+0.9 (2014-12-30)
+----------------
 
 - Work around recording transaction userid containing unicode.
   See https://github.com/Pylons/pyramid_tm/pull/15, although the fix
