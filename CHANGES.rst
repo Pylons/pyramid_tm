@@ -1,7 +1,7 @@
 Changes
 =======
 
-0.10 (unreleased)
+0.10 (2015-01-06)
 -----------------
 
 - Fix recording transactions with non-text, non-bytes userids.
