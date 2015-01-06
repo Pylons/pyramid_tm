@@ -1,10 +1,11 @@
 import sys
 import transaction
-from transaction._compat import native_
 
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
+
 from pyramid_tm.compat import reraise
+from pyramid_tm.compat import native_
 
 resolver = DottedNameResolver(None)
 

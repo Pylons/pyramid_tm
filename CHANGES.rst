@@ -1,6 +1,12 @@
 Changes
 =======
 
+0.10 (unreleased)
+-----------------
+
+- Fix recording transactions with non-text, non-bytes userids.
+  See: https://github.com/Pylons/pyramid_tm/issues/28
+
 0.9 (2014-12-30)
 ----------------
 

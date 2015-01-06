@@ -160,6 +160,13 @@ class Test_tm_tween_factory(unittest.TestCase):
             self.assertEqual(self.txn.username,
                              ' ' + native_(USERID, 'utf-8'))
 
+    def test_handler_w_integer_unauthenticated_userid(self):
+        # See https://github.com/Pylons/pyramid_tm/issues/28
+        USERID = 1234
+        self.config.testing_securitypolicy(userid=USERID)
+        self._callFUT()
+        self.assertEqual(self.txn.username, ' 1234')
+
     def test_handler_notes(self):
         self._callFUT()
         self.assertEqual(self.txn._note, '/')
