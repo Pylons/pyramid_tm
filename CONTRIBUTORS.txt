@@ -106,3 +106,4 @@ Contributors
 - Gavin Carothers, 2014/11/11
 - Chris McDonough, 2014/11/12
 - Chris Rossi, 2014/11/20
+- Donald Stufft, 2015/02/02
