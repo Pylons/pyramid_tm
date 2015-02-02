@@ -4,7 +4,6 @@ import unittest
 import transaction
 from transaction import TransactionManager
 from pyramid import testing
-from pyramid.exceptions import ConfigurationError
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -76,7 +75,7 @@ class Test_tm_tween_factory(unittest.TestCase):
             request = self.request
         if txn is None:
             txn = self.txn
-        request.transaction = txn
+        request.tm = txn
         from pyramid_tm import tm_tween_factory
         factory = tm_tween_factory(handler, registry)
         return factory(request)
@@ -303,7 +302,7 @@ class Test_create_tm(unittest.TestCase):
         self.request.registry = Dummy(settings={})
         # Get rid of the request.transaction attribute since it shouldn't be
         # here yet.
-        del self.request.transaction
+        del self.request.tm
 
 
     def tearDown(self):
@@ -349,7 +348,7 @@ class Test_includeme(unittest.TestCase):
         self.assertEqual(config.tweens,
                          [('pyramid_tm.tm_tween_factory', EXCVIEW, None)])
         self.assertEqual(config.request_methods,
-                         [('pyramid_tm.create_tm', 'transaction', True)])
+                         [('pyramid_tm.create_tm', 'tm', True)])
         self.assertEqual(len(config.actions), 1)
         self.assertEqual(config.actions[0][0], None)
         self.assertEqual(config.actions[0][2], 10)
@@ -359,7 +358,7 @@ class Test_includeme(unittest.TestCase):
         config = DummyConfig()
         config.registry.settings["tm.manager_hook"] = "an.invalid.import"
         includeme(config)
-        self.assertRaises(ConfigurationError, config.actions[0][1])
+        self.assertRaises(ImportError, config.actions[0][1])
 
     def test_valid_dotted(self):
         from pyramid_tm import includeme
@@ -429,7 +428,7 @@ class DummyTransaction(TransactionManager):
 class DummyRequest(testing.DummyRequest):
     def __init__(self, *args, **kwargs):
         self.made_seekable = 0
-        self.transaction = TransactionManager()
+        self.tm = TransactionManager()
         super(DummyRequest, self).__init__(self, *args, **kwargs)
 
     def make_body_seekable(self):

@@ -114,7 +114,7 @@ To enable this hook, add it as the ``tm.manager_hook`` setting in your app.
        # ...
 
 The current transaction manager being used for any particular request can
-always be accessed on the request as ``request.transaction``.
+always be accessed on the request as ``request.tm``.
 
 
 Adding an Activation Hook
