@@ -1,6 +1,7 @@
 import sys
 import transaction
 
+from pyramid.exceptions import ConfigurationError
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
 
@@ -139,3 +140,14 @@ def includeme(config):
         'pyramid_tm.create_tm', name='transaction', reify=True,
     )
     config.add_tween('pyramid_tm.tm_tween_factory', under=EXCVIEW)
+
+    def ensure():
+        manager_hook = config.registry.settings.get("tm.manager_hook")
+        if manager_hook is not None:
+            try:
+                manager_hook = resolver.maybe_resolve(manager_hook)
+                config.registry.settings["tm.manager_hook"] = manager_hook
+            except (ImportError, ValueError):
+                raise ConfigurationError("Unable to resolve tm.manager_hook")
+
+    config.action(None, ensure, order=10)

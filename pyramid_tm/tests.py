@@ -4,6 +4,7 @@ import unittest
 import transaction
 from transaction import TransactionManager
 from pyramid import testing
+from pyramid.exceptions import ConfigurationError
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -337,6 +338,8 @@ def activate_true(request):
 def activate_false(request):
     return False
 
+create_manager = None
+
 class Test_includeme(unittest.TestCase):
     def test_it(self):
         from pyramid.tweens import EXCVIEW
@@ -347,6 +350,27 @@ class Test_includeme(unittest.TestCase):
                          [('pyramid_tm.tm_tween_factory', EXCVIEW, None)])
         self.assertEqual(config.request_methods,
                          [('pyramid_tm.create_tm', 'transaction', True)])
+        self.assertEqual(len(config.actions), 1)
+        self.assertEqual(config.actions[0][0], None)
+        self.assertEqual(config.actions[0][2], 10)
+
+    def test_invalid_dotted(self):
+        from pyramid_tm import includeme
+        config = DummyConfig()
+        config.registry.settings["tm.manager_hook"] = "an.invalid.import"
+        includeme(config)
+        self.assertRaises(ConfigurationError, config.actions[0][1])
+
+    def test_valid_dotted(self):
+        from pyramid_tm import includeme
+        config = DummyConfig()
+        config.registry.settings["tm.manager_hook"] = \
+            "pyramid_tm.tests.create_manager"
+        includeme(config)
+        config.actions[0][1]()
+        self.assertTrue(
+            config.registry.settings["tm.manager_hook"] is create_manager
+        )
 
 class Dummy(object):
     def __init__(self, **kwargs):
@@ -423,9 +447,13 @@ class DummyConfig(object):
         self.registry = Dummy(settings={})
         self.tweens = []
         self.request_methods = []
+        self.actions = []
 
     def add_tween(self, x, under=None, over=None):
         self.tweens.append((x, under, over))
 
     def add_request_method(self, x, name=None, reify=None):
         self.request_methods.append((x, name, reify))
+
+    def action(self, x, fun, order=None):
+        self.actions.append((x, fun, order))
