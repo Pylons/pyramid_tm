@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import transaction
 from transaction import TransactionManager
 from pyramid import testing
 
@@ -74,8 +75,9 @@ class Test_tm_tween_factory(unittest.TestCase):
             request = self.request
         if txn is None:
             txn = self.txn
+        request.transaction = txn
         from pyramid_tm import tm_tween_factory
-        factory = tm_tween_factory(handler, registry, txn)
+        factory = tm_tween_factory(handler, registry)
         return factory(request)
 
     def test_repoze_tm_active(self):
@@ -293,6 +295,36 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.aborted)
         self.assertFalse(self.txn.committed)
 
+class Test_create_tm(unittest.TestCase):
+
+    def setUp(self):
+        self.request = DummyRequest()
+        self.request.registry = Dummy(settings={})
+        # Get rid of the request.transaction attribute since it shouldn't be
+        # here yet.
+        del self.request.transaction
+
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def _callFUT(self, request=None):
+        if request is None:
+            request = self.request
+        from pyramid_tm import create_tm
+        return create_tm(request)
+
+    def test_default_threadlocal(self):
+        self.assertTrue(self._callFUT() is transaction.manager)
+
+    def test_overridden_manager(self):
+        txn = DummyTransaction()
+        request = DummyRequest()
+        request.registry = Dummy(settings={})
+        request.registry.settings["tm.manager_hook"] = lambda request: txn
+        self.assertTrue(self._callFUT(request=request) is txn)
+
+
 def veto_true(request, response):
     return True
 
@@ -313,6 +345,8 @@ class Test_includeme(unittest.TestCase):
         includeme(config)
         self.assertEqual(config.tweens,
                          [('pyramid_tm.tm_tween_factory', EXCVIEW, None)])
+        self.assertEqual(config.request_methods,
+                         [('pyramid_tm.create_tm', 'transaction', True)])
 
 class Dummy(object):
     def __init__(self, **kwargs):
@@ -339,10 +373,6 @@ class DummyTransaction(TransactionManager):
         self.aborted = 0
         self.retryable = retryable
         self.active = False
-
-    @property
-    def manager(self):
-        return self
 
     def _retryable(self, t, v):
         if self.active:
@@ -375,6 +405,7 @@ class DummyTransaction(TransactionManager):
 class DummyRequest(testing.DummyRequest):
     def __init__(self, *args, **kwargs):
         self.made_seekable = 0
+        self.transaction = TransactionManager()
         super(DummyRequest, self).__init__(self, *args, **kwargs)
 
     def make_body_seekable(self):
@@ -391,6 +422,10 @@ class DummyConfig(object):
     def __init__(self):
         self.registry = Dummy(settings={})
         self.tweens = []
+        self.request_methods = []
 
     def add_tween(self, x, under=None, over=None):
         self.tweens.append((x, under, over))
+
+    def add_request_method(self, x, name=None, reify=None):
+        self.request_methods.append((x, name, reify))

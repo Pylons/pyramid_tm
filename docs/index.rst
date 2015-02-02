@@ -83,6 +83,40 @@ well as SQLAlchemy connections which are configured with the
 ``ZopeTransactionExtension`` extension from the `zope.sqlalchemy
 <https://pypi.python.org/pypi/zope.sqlalchemy>`_ package.
 
+
+Custom Transaction Managers
+---------------------------
+
+By default ``pyramid_tm`` will use the default transaction manager which uses
+thread locals to associate one transaction manager per thread. If you wish
+to override this and provide your own transaction manager you can create your
+own manager hook that will return the manager it should use.
+
+.. code-block:: python
+   :linenos:
+
+   import transaction
+
+   def manager_hook(request):
+       return transaction.TransactionManager()
+
+To enable this hook, add it as the ``tm.manager_hook`` setting in your app.
+
+.. code-block:: python
+   :linenos:
+
+   from pyramid.config import Configurator
+
+   def app(global_conf, **settings):
+       settings['tm.manager_hook'] = manager_hook
+       config = Configurator(settings=settings)
+       config.include('pyramid_tm')
+       # ...
+
+The current transaction manager being used for any particular request can
+always be accessed on the request as ``request.transaction``.
+
+
 Adding an Activation Hook
 -------------------------
 
