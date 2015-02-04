@@ -1,6 +1,13 @@
 Changes
 =======
 
+Unreleased
+----------
+
+- Add a hook to override creation of the transaction manager (the default
+  remains the thread-local one accessed through ``transaction.manager``).
+  See: https://github.com/Pylons/pyramid_tm/pull/31
+
 0.10 (2015-01-06)
 -----------------
 
