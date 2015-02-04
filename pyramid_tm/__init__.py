@@ -30,8 +30,7 @@ class AbortResponse(Exception):
     def __init__(self, response):
         self.response = response
 
-def tm_tween_factory(handler, registry, transaction=transaction):
-    # transaction parameterized for testing purposes
+def tm_tween_factory(handler, registry):
     old_commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
     commit_veto = registry.settings.get('tm.commit_veto', old_commit_veto)
     activate = registry.settings.get('tm.activate_hook')
@@ -49,7 +48,7 @@ def tm_tween_factory(handler, registry, transaction=transaction):
             if not activate(request):
                 return handler(request)
 
-        manager = transaction.manager
+        manager = request.tm
         number = attempts
         if hasattr(request, 'unauthenticated_userid'):
             userid = request.unauthenticated_userid
@@ -98,6 +97,16 @@ def tm_tween_factory(handler, registry, transaction=transaction):
 
     return tm_tween
 
+
+def create_tm(request):
+    manager_hook = request.registry.settings.get('tm.manager_hook')
+    if manager_hook:
+        manager_hook = resolver.maybe_resolve(manager_hook)
+        return manager_hook(request)
+    else:
+        return transaction.manager
+
+
 def includeme(config):
     """
     Set up am implicit 'tween' to do transaction management using the
@@ -126,4 +135,13 @@ def includeme(config):
     - If none of the above conditions are True, the transaction will be
       committed (via ``transaction.commit()``).
     """
+    config.add_request_method('pyramid_tm.create_tm', name='tm', reify=True)
     config.add_tween('pyramid_tm.tm_tween_factory', under=EXCVIEW)
+
+    def ensure():
+        manager_hook = config.registry.settings.get("tm.manager_hook")
+        if manager_hook is not None:
+            manager_hook = resolver.maybe_resolve(manager_hook)
+            config.registry.settings["tm.manager_hook"] = manager_hook
+
+    config.action(None, ensure, order=10)
