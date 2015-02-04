@@ -1,8 +1,8 @@
 Changes
 =======
 
-Unreleased
-----------
+0.11 (2015-02-04)
+-----------------
 
 - Add a hook to override creation of the transaction manager (the default
   remains the thread-local one accessed through ``transaction.manager``).
