@@ -77,7 +77,7 @@ third-party code to *join* the active transaction to benefit.  See
 example of how files creation can be committed or rolled back based on
 :term:`transaction` and the `pyramid_mailer
 <http://docs.pylonsproject.org/projects/pyramid_mailer/dev/>`_ package to see
-how you can prevent emails from being sent until a transaction succeeeds.
+how you can prevent emails from being sent until a transaction succeeds.
 ZODB database connections are automatically joined to the transaction, as
 well as SQLAlchemy connections which are configured with the
 ``ZopeTransactionExtension`` extension from the `zope.sqlalchemy
