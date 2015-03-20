@@ -1,13 +1,15 @@
 import sys
 import transaction
 
-from pyramid.util import DottedNameResolver
+from pyramid.httpexceptions import HTTPException
 from pyramid.tweens import EXCVIEW
+from pyramid.util import DottedNameResolver
 
 from pyramid_tm.compat import reraise
 from pyramid_tm.compat import native_
 
 resolver = DottedNameResolver(None)
+
 
 def default_commit_veto(request, response):
     """
@@ -26,16 +28,18 @@ def default_commit_veto(request, response):
         return xtm != 'commit'
     return response.status.startswith(('4', '5'))
 
+
 class AbortResponse(Exception):
     def __init__(self, response):
         self.response = response
+
 
 def tm_tween_factory(handler, registry):
     old_commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
     commit_veto = registry.settings.get('tm.commit_veto', old_commit_veto)
     activate = registry.settings.get('tm.activate_hook')
     attempts = int(registry.settings.get('tm.attempts', 1))
-    commit_veto = resolver.maybe_resolve(commit_veto) if commit_veto else None
+    commit_veto = resolver.maybe_resolve(commit_veto) if commit_veto else default_commit_veto
     activate = resolver.maybe_resolve(activate) if activate else None
     assert attempts > 0
 
@@ -72,13 +76,16 @@ def tm_tween_factory(handler, registry):
                     t.note(native_(request.path_info, 'utf-8'))
                 except UnicodeDecodeError:
                     t.note("Unable to decode path as unicode")
-                response = handler(request)
+                try:
+                    response = handler(request)
+                except HTTPException as e:
+                    response = e
+
                 if manager.isDoomed():
                     raise AbortResponse(response)
-                if commit_veto is not None:
-                    veto = commit_veto(request, response)
-                    if veto:
-                        raise AbortResponse(response)
+                if commit_veto is not None and commit_veto(request, response):
+                    raise AbortResponse(response)
+
                 manager.commit()
                 return response
             except AbortResponse:
