@@ -52,7 +52,7 @@ def tm_tween_factory(handler, registry):
         number = attempts
         if hasattr(request, 'unauthenticated_userid'):
             userid = request.unauthenticated_userid
-        else: #pragma NO COVER deprecated
+        else: #pragma NO COVER (pyramid < 1.5)
             from pyramid.security import unauthenticated_userid
             userid = unauthenticated_userid(request)
 

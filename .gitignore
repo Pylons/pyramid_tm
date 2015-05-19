@@ -5,13 +5,12 @@
 *.pt.py
 *.txt.py
 *~
-.coverage
+.coverage*
+nosetests*.xml
+coverage*.xml
 build/
 dist/
 .tox/
-nosetests.xml
-pyramid_tm/coverage.xml
 env*/
 venv/
-coverage.xml
 .idea/

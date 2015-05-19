@@ -29,7 +29,10 @@ install_requires = [
     ]
 
 testing_extras = ['nose', 'coverage']
-docs_extras = ['Sphinx']
+docs_extras = [
+    'Sphinx',
+    'pylons-sphinx-themes',
+]
 
 setup(name='pyramid_tm',
       version='0.10',
