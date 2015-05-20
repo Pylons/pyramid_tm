@@ -1,6 +1,11 @@
 Changes
 =======
 
+unreleased
+----------
+
+- Restore compatibility with Pyramid 1.2 and 1.3.
+
 0.11 (2015-02-04)
 -----------------
 
