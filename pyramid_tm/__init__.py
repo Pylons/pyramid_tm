@@ -1,6 +1,7 @@
 import sys
 import transaction
 
+from pyramid.settings import asbool
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
 
@@ -37,7 +38,7 @@ def tm_tween_factory(handler, registry):
     attempts = int(registry.settings.get('tm.attempts', 1))
     commit_veto = resolver.maybe_resolve(commit_veto) if commit_veto else None
     activate = resolver.maybe_resolve(activate) if activate else None
-    annotate_user = registry.settings.get("tm.annotate_user", True)
+    annotate_user = asbool(registry.settings.get("tm.annotate_user", True))
     assert attempts > 0
 
     def tm_tween(request):

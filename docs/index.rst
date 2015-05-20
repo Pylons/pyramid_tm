@@ -296,6 +296,14 @@ It usually belongs directly above the "MAIN" entry in the ``paster ptweens``
 output, and will attempt to sort there by default as the result of having
 ``include('pyramid_tm')`` invoked.
 
+Avoid Accessing the Authentication Policy
+-----------------------------------------
+
+By default the tween will access
+:attr:`pyramid.request.Request.unauthenticated_userid` in order to annotate
+the transaction with information about the user. This can be turned off
+by setting the ini option ``tm.annotate_user = false``.
+
 More Information
 ----------------
 

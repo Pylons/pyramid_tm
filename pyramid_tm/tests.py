@@ -171,7 +171,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_disables_user_annotation(self):
         self.config.testing_securitypolicy(userid="nope")
-        registry = DummyRegistry({"tm.annotate_user": False})
+        registry = DummyRegistry({"tm.annotate_user": 'false'})
         result = self._callFUT(registry=registry)
         self.assertEqual(self.txn.username, None)
 
