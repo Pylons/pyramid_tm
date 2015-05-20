@@ -41,7 +41,7 @@ else: # pragma: no cover
     raise tp, value, tb
 """)
 
-    def native_(s, encoding='latin-1', errors='strict'): #pragma NO COVER
+    def native_(s, encoding='latin-1', errors='strict'):
         if isinstance(s, text_type):
             return s.encode(encoding, errors)
         return str(s)

@@ -151,12 +151,12 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(self.txn.username, ' phred')
 
     def test_handler_w_unicode_unauthenticated_userid(self):
-        from pyramid.compat import native_
+        from pyramid_tm.compat import native_
         from pyramid_tm.compat import PY3
         USERID = b'phred/\xd1\x80\xd0\xb5\xd1\x81'.decode('utf-8')
         self.config.testing_securitypolicy(userid=USERID)
         self._callFUT()
-        if PY3:  # pragma: no cover Py3k
+        if PY3:
             self.assertEqual(self.txn.username, ' phred/рес')
         else:
             self.assertEqual(self.txn.username,
@@ -202,7 +202,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        if PY3:  # pragma: no cover Py3k
+        if PY3:
             self.assertEqual(self.txn._note, 'collection/рес')
         else:
             self.assertEqual(self.txn._note,
