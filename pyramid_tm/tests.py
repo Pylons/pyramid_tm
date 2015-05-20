@@ -371,6 +371,13 @@ class Test_includeme(unittest.TestCase):
             config.registry.settings["tm.manager_hook"] is create_manager
         )
 
+    def test_it_config(self):
+        config = testing.setUp()
+        try:
+            config.include('pyramid_tm')
+        finally:
+            testing.tearDown()
+
 class Dummy(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
