@@ -169,6 +169,12 @@ class Test_tm_tween_factory(unittest.TestCase):
         self._callFUT()
         self.assertEqual(self.txn.username, ' 1234')
 
+    def test_disables_user_annotation(self):
+        self.config.testing_securitypolicy(userid="nope")
+        registry = DummyRegistry({"tm.annotate_user": False})
+        result = self._callFUT(registry=registry)
+        self.assertEqual(self.txn.username, None)
+
     def test_handler_notes(self):
         self._callFUT()
         self.assertEqual(self.txn._note, '/')

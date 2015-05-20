@@ -37,6 +37,7 @@ def tm_tween_factory(handler, registry):
     attempts = int(registry.settings.get('tm.attempts', 1))
     commit_veto = resolver.maybe_resolve(commit_veto) if commit_veto else None
     activate = resolver.maybe_resolve(activate) if activate else None
+    annotate_user = registry.settings.get("tm.annotate_user", True)
     assert attempts > 0
 
     def tm_tween(request):
@@ -50,11 +51,14 @@ def tm_tween_factory(handler, registry):
 
         manager = request.tm
         number = attempts
-        if hasattr(request, 'unauthenticated_userid'):
-            userid = request.unauthenticated_userid
-        else: #pragma NO COVER (pyramid < 1.5)
-            from pyramid.security import unauthenticated_userid
-            userid = unauthenticated_userid(request)
+        if annotate_user:
+            if hasattr(request, 'unauthenticated_userid'):
+                userid = request.unauthenticated_userid
+            else: # pragma no cover (for pyramid < 1.5)
+                from pyramid.security import unauthenticated_userid
+                userid = unauthenticated_userid(request)
+        else:
+            userid = None
 
         while number:
             number -= 1
