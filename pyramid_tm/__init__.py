@@ -135,7 +135,14 @@ def includeme(config):
     - If none of the above conditions are True, the transaction will be
       committed (via ``transaction.commit()``).
     """
-    config.add_request_method('pyramid_tm.create_tm', name='tm', reify=True)
+    # pyramid 1.4+
+    if hasattr(config, 'add_request_method'):
+        config.add_request_method(
+            'pyramid_tm.create_tm', name='tm', reify=True)
+    # pyramid 1.3
+    elif hasattr(config, 'set_request_property'): # pragma: no cover
+        config.set_request_property(
+            'pyramid_tm.create_tm', name='tm', reify=True)
     config.add_tween('pyramid_tm.tm_tween_factory', under=EXCVIEW)
 
     def ensure():
