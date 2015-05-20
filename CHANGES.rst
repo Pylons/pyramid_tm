@@ -4,6 +4,10 @@ Changes
 unreleased
 ----------
 
+- Expose a ``tm.annotate_user`` option to avoid computing
+  ``request.unauthenticated_userid`` on every request.
+  See https://github.com/Pylons/pyramid_tm/pull/36
+
 - Restore compatibility with Pyramid 1.2 and 1.3.
 
 0.11 (2015-02-04)
