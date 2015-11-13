@@ -1,8 +1,8 @@
 Changes
 =======
 
-unreleased
-----------
+0.12 (2015-05-20)
+-----------------
 
 - Expose a ``tm.annotate_user`` option to avoid computing
   ``request.unauthenticated_userid`` on every request.
