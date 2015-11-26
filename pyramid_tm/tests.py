@@ -4,6 +4,7 @@ import unittest
 import transaction
 from transaction import TransactionManager
 from pyramid import testing
+from webtest import TestApp
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -384,6 +385,56 @@ class Test_includeme(unittest.TestCase):
         finally:
             testing.tearDown()
 
+class TestIntegration(unittest.TestCase):
+    def setUp(self):
+        self.config = config = testing.setUp()
+        config.include('pyramid_tm')
+
+    def tearDown(self):
+        testing.tearDown()
+
+    def _makeApp(self):
+        app = self.config.make_wsgi_app()
+        return TestApp(app)
+
+    def test_it(self):
+        config = self.config
+        dm = DummyDataManager()
+        def view(request):
+            dm.bind(request.tm)
+            return 'ok'
+        config.add_view(view, name='', renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'ok')
+        self.assertEqual(dm.action, 'commit')
+
+    def test_unhandled_error_aborts(self):
+        config = self.config
+        dm = DummyDataManager()
+        def view(request):
+            dm.bind(request.tm)
+            raise ValueError
+        config.add_view(view)
+        app = self._makeApp()
+        self.assertRaises(ValueError, app.get, '/')
+        self.assertEqual(dm.action, 'abort')
+
+    def test_handled_error_aborts(self):
+        config = self.config
+        dm = DummyDataManager()
+        def view(request):
+            dm.bind(request.tm)
+            raise ValueError
+        config.add_view(view)
+        def exc_view(request):
+            return 'failure'
+        config.add_view(exc_view, context=ValueError, renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'failure')
+        self.assertEqual(dm.action, 'abort')
+
 class Dummy(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
@@ -437,6 +488,34 @@ class DummyTransaction(TransactionManager):
 
     def note(self, value):
         self._note = value
+
+class DummyDataManager(object):
+    action = None
+
+    def bind(self, tm):
+        self.transaction_manager = tm
+        tm.get().join(self)
+
+    def abort(self, transaction):
+        self.action = 'abort'
+
+    def tpc_begin(self, transaction):
+        pass
+
+    def commit(self, transaction):
+        self.action = 'commit'
+
+    def tpc_vote(self, transaction):
+        pass
+
+    def tpc_finish(self, transaction):
+        pass
+
+    def tpc_abort(self, transaction): # pragma: no cover
+        pass
+
+    def sortKey(self):
+        return 'dummy:%s' % id(self)
 
 class DummyRequest(testing.DummyRequest):
     def __init__(self, *args, **kwargs):

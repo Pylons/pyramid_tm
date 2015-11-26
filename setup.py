@@ -28,7 +28,11 @@ install_requires = [
     'transaction',
     ]
 
-testing_extras = ['nose', 'coverage']
+tests_require = [
+    'WebTest',
+]
+
+testing_extras = tests_require + ['nose', 'coverage']
 docs_extras = [
     'Sphinx',
     'pylons-sphinx-themes',
@@ -65,7 +69,7 @@ setup(name='pyramid_tm',
       include_package_data=True,
       zip_safe=False,
       install_requires=install_requires,
-      tests_require=install_requires,
+      tests_require=tests_require,
       test_suite="pyramid_tm",
       entry_points='',
       extras_require = {

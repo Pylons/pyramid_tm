@@ -50,7 +50,10 @@ def tm_tween_factory(handler, registry):
             if not activate(request):
                 return handler(request)
 
-        manager = request.tm
+        manager = getattr(request, 'tm', None)
+        if manager is None: # pragma: no cover (pyramid < 1.4)
+            manager = create_tm(request)
+            request.tm = manager
         number = attempts
         if annotate_user:
             if hasattr(request, 'unauthenticated_userid'):
