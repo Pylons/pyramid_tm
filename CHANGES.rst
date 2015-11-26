@@ -1,6 +1,14 @@
 Changes
 =======
 
+unreleased
+----------
+
+- Fix compatibility with 1.2 and 1.3 again. This wasn't fully fixed in the
+  0.12 release as the tween was relying on request properties working (which
+  they do not inside tweens in older versions).
+  See https://github.com/Pylons/pyramid_tm/pull/39
+
 0.12 (2015-05-20)
 -----------------
 
