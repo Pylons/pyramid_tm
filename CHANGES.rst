@@ -1,3 +1,10 @@
+unreleased
+==========
+
+- Drop Python 2.6, 3.2 and 3.3 support.
+
+- Add Python 3.5 support.
+
 Changes
 =======
 
