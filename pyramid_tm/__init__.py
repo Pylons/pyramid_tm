@@ -63,18 +63,10 @@ def tm_tween_factory(handler, registry):
         # Set a flag in the environment to enable the `request.tm` property.
         request.environ['tm.active'] = True
 
-        manager = getattr(request, 'tm', None)
-        if manager is None: # pragma: no cover (pyramid < 1.4)
-            manager = create_tm(request)
-            request.tm = manager
+        manager = request.tm
         number = attempts
         if annotate_user:
-            if hasattr(request, 'unauthenticated_userid'):
-                userid = request.unauthenticated_userid
-            else: # pragma no cover (for pyramid < 1.5)
-                from pyramid.security import unauthenticated_userid
-                userid = unauthenticated_userid(request)
-
+            userid = request.unauthenticated_userid
             if userid:
                 userid = text_(userid)
         else:
@@ -160,14 +152,7 @@ def includeme(config):
     - If none of the above conditions are True, the transaction will be
       committed (via ``transaction.commit()``).
     """
-    # pyramid 1.4+
-    if hasattr(config, 'add_request_method'):
-        config.add_request_method(
-            'pyramid_tm.create_tm', name='tm', reify=True)
-    # pyramid 1.3
-    elif hasattr(config, 'set_request_property'): # pragma: no cover
-        config.set_request_property(
-            'pyramid_tm.create_tm', name='tm', reify=True)
+    config.add_request_method('pyramid_tm.create_tm', name='tm', reify=True)
     config.add_tween('pyramid_tm.tm_tween_factory', under=EXCVIEW)
 
     def ensure():
