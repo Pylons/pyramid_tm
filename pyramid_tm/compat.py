@@ -13,7 +13,7 @@ if PY2:
             if _locs_ is None:
                 _locs_ = frame.f_locals
             del frame
-        elif _locs_ is None:  # pragma: nocover
+        elif _locs_ is None:  # pragma: no cover
             _locs_ = _globs_
         exec("""exec _code_ in _globs_, _locs_""")
 
@@ -29,9 +29,9 @@ else:
 
     def reraise(tp, value, tb=None):
         try:
-            if value is None:  # pragma: nocover
+            if value is None:  # pragma: no cover
                 value = tp()
-            if value.__traceback__ is not tb:  # pragma: nocover
+            if value.__traceback__ is not tb:  # pragma: no cover
                 raise value.with_traceback(tb)
             raise value
         finally:
