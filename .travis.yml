@@ -1,21 +1,41 @@
 language: python
 sudo: false
-env:
-    - TOXENV=py26
-    - TOXENV=py27
-    - TOXENV=pypy
-    - TOXENV=pypy3
-    - TOXENV=py32 # no u"" support
-    - TOXENV=py33
-    - TOXENV=py34
-    - TOXENV=py2-docs
-    - TOXENV=py3-docs
-    - TOXENV=py2-cover,py3-cover,coverage
-    - TOXENV=py27-pyramid12
-    - TOXENV=py27-pyramid13
-    - TOXENV=py27-pyramid14
-    - TOXENV=py27-pyramid15
+
+matrix:
+    include:
+        - python: 2.7
+          env: TOXENV=py27
+        - python: 3.4
+          env: TOXENV=py34
+        - python: 3.5
+          env: TOXENV=py35
+        - python: pypy
+          env: TOXENV=pypy
+        - python: 3.5
+          env: TOXENV=py2-cover,py3-cover,coverage
+        - python: 3.5
+          env: TOXENV=docs
+        - python: 3.5
+          env: TOXENV=pep8
+        - python: 2.7
+          env: TOXENV=py27-pyramid12
+        - python: 2.7
+          env: TOXENV=py27-pyramid13
+        - python: 2.7
+          env: TOXENV=py27-pyramid14
+        - python: 2.7
+          env: TOXENV=py27-pyramid15
+
 install:
-    - travis_retry pip install tox
+  - travis_retry pip install tox
+
 script:
-    - travis_retry tox
+  - travis_retry tox
+
+notifications:
+  email:
+    - pyramid-checkins@lists.repoze.org
+  irc:
+    channels:
+      - "chat.freenode.net#pyramid"
+
