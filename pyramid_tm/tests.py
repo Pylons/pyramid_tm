@@ -88,6 +88,13 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
 
+    def test_tm_active(self):
+        request = DummyRequest()
+        request.environ['tm.active'] = True
+        result = self._callFUT(request=request)
+        self.assertEqual(result, self.response)
+        self.assertFalse(self.txn.began)
+
     def test_should_activate_true(self):
         registry = DummyRegistry(
             {'tm.activate_hook':'pyramid_tm.tests.activate_true'})
@@ -348,6 +355,8 @@ class Test_create_tm(unittest.TestCase):
         # Get rid of the request.transaction attribute since it shouldn't be
         # here yet.
         del self.request.tm
+        # By default, behave as if we're in a request with the tm active.
+        self.request.environ['tm.active'] = True
 
 
     def tearDown(self):
@@ -364,11 +373,12 @@ class Test_create_tm(unittest.TestCase):
 
     def test_overridden_manager(self):
         txn = DummyTransaction()
-        request = DummyRequest()
-        request.registry = Dummy(settings={})
-        request.registry.settings["tm.manager_hook"] = lambda request: txn
-        self.assertTrue(self._callFUT(request=request) is txn)
+        self.request.registry.settings["tm.manager_hook"] = lambda r: txn
+        self.assertTrue(self._callFUT() is txn)
 
+    def test_raises_attributeerror_if_tm_inactive(self):
+        del self.request.environ['tm.active']
+        self.assertRaises(AttributeError, self._callFUT)
 
 def veto_true(request, response):
     return True
