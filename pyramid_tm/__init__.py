@@ -50,6 +50,9 @@ def tm_tween_factory(handler, registry):
             if not activate(request):
                 return handler(request)
 
+        # Set a flag in the environment to enable the `request.tm` property.
+        request.environ['tm.active'] = True
+
         manager = getattr(request, 'tm', None)
         if manager is None: # pragma: no cover (pyramid < 1.4)
             manager = create_tm(request)
@@ -88,9 +91,11 @@ def tm_tween_factory(handler, registry):
                     if veto:
                         raise AbortResponse(response)
                 manager.commit()
+                del request.environ['tm.active']
                 return response
             except AbortResponse as e:
                 manager.abort()
+                del request.environ['tm.active']
                 return e.response
             except:
                 exc_info = sys.exc_info()
@@ -98,6 +103,7 @@ def tm_tween_factory(handler, registry):
                     retryable = manager._retryable(*exc_info[:-1])
                     manager.abort()
                     if (number <= 0) or (not retryable):
+                        del request.environ['tm.active']
                         reraise(*exc_info)
                 finally:
                     del exc_info # avoid leak

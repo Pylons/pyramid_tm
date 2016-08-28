@@ -232,6 +232,44 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(self.txn._note, 'some/resource')
         self.assertEqual(self.txn.username, None)
 
+    def test_active_flag_set_during_handler(self):
+        result = []
+        def handler(request):
+            if 'tm.active' in request.environ:
+                result.append('active')
+            return self.response
+        self._callFUT(handler=handler)
+        self.assertEqual(result, ['active'])
+
+    def test_active_flag_not_set_activate_false(self):
+        registry = DummyRegistry(
+            {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
+        result = []
+        def handler(request):
+            if 'tm.active' not in request.environ:
+                result.append('not active')
+            return self.response
+        self._callFUT(handler=handler, registry=registry)
+        self.assertEqual(result, ['not active'])
+
+    def test_active_flag_unset_on_egress(self):
+        self._callFUT()
+        self.assertTrue('tm.active' not in self.request.environ)
+
+    def test_active_flag_unset_on_egress_abort(self):
+        txn = DummyTransaction(doomed=True)
+        self._callFUT(txn=txn)
+        self.assertTrue('tm.active' not in self.request.environ)
+
+    def test_active_flag_unset_on_egress_exception(self):
+        def handler(request):
+            raise NotImplementedError
+        try:
+            self._callFUT(handler=handler)
+        except NotImplementedError:
+            pass
+        self.assertTrue('tm.active' not in self.request.environ)
+
     def test_500_without_commit_veto(self):
         response = DummyResponse()
         response.status = '500 Bad Request'
