@@ -46,9 +46,16 @@ def tm_tween_factory(handler, registry):
             # don't handle txn mgmt if repoze.tm is in the WSGI pipeline
             return handler(request)
 
+        if 'tm.active' in request.environ:
+            # only one transaction manager can be active at once
+            return handler(request)
+
         if activate is not None:
             if not activate(request):
                 return handler(request)
+
+        # Set a flag in the environment to enable the `request.tm` property.
+        request.environ['tm.active'] = True
 
         manager = getattr(request, 'tm', None)
         if manager is None: # pragma: no cover (pyramid < 1.4)
@@ -88,9 +95,11 @@ def tm_tween_factory(handler, registry):
                     if veto:
                         raise AbortResponse(response)
                 manager.commit()
+                del request.environ['tm.active']
                 return response
             except AbortResponse as e:
                 manager.abort()
+                del request.environ['tm.active']
                 return e.response
             except:
                 exc_info = sys.exc_info()
@@ -98,6 +107,7 @@ def tm_tween_factory(handler, registry):
                     retryable = manager._retryable(*exc_info[:-1])
                     manager.abort()
                     if (number <= 0) or (not retryable):
+                        del request.environ['tm.active']
                         reraise(*exc_info)
                 finally:
                     del exc_info # avoid leak
@@ -106,6 +116,9 @@ def tm_tween_factory(handler, registry):
 
 
 def create_tm(request):
+    if 'tm.active' not in request.environ:
+        raise AttributeError('tm inactive for request or accessed above tm '
+                             'tween')
     manager_hook = request.registry.settings.get('tm.manager_hook')
     if manager_hook:
         manager_hook = resolver.maybe_resolve(manager_hook)

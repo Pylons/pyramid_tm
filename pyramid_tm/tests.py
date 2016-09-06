@@ -88,6 +88,13 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
 
+    def test_tm_active(self):
+        request = DummyRequest()
+        request.environ['tm.active'] = True
+        result = self._callFUT(request=request)
+        self.assertEqual(result, self.response)
+        self.assertFalse(self.txn.began)
+
     def test_should_activate_true(self):
         registry = DummyRegistry(
             {'tm.activate_hook':'pyramid_tm.tests.activate_true'})
@@ -232,6 +239,44 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(self.txn._note, 'some/resource')
         self.assertEqual(self.txn.username, None)
 
+    def test_active_flag_set_during_handler(self):
+        result = []
+        def handler(request):
+            if 'tm.active' in request.environ:
+                result.append('active')
+            return self.response
+        self._callFUT(handler=handler)
+        self.assertEqual(result, ['active'])
+
+    def test_active_flag_not_set_activate_false(self):
+        registry = DummyRegistry(
+            {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
+        result = []
+        def handler(request):
+            if 'tm.active' not in request.environ:
+                result.append('not active')
+            return self.response
+        self._callFUT(handler=handler, registry=registry)
+        self.assertEqual(result, ['not active'])
+
+    def test_active_flag_unset_on_egress(self):
+        self._callFUT()
+        self.assertTrue('tm.active' not in self.request.environ)
+
+    def test_active_flag_unset_on_egress_abort(self):
+        txn = DummyTransaction(doomed=True)
+        self._callFUT(txn=txn)
+        self.assertTrue('tm.active' not in self.request.environ)
+
+    def test_active_flag_unset_on_egress_exception(self):
+        def handler(request):
+            raise NotImplementedError
+        try:
+            self._callFUT(handler=handler)
+        except NotImplementedError:
+            pass
+        self.assertTrue('tm.active' not in self.request.environ)
+
     def test_500_without_commit_veto(self):
         response = DummyResponse()
         response.status = '500 Bad Request'
@@ -310,6 +355,8 @@ class Test_create_tm(unittest.TestCase):
         # Get rid of the request.transaction attribute since it shouldn't be
         # here yet.
         del self.request.tm
+        # By default, behave as if we're in a request with the tm active.
+        self.request.environ['tm.active'] = True
 
 
     def tearDown(self):
@@ -326,11 +373,12 @@ class Test_create_tm(unittest.TestCase):
 
     def test_overridden_manager(self):
         txn = DummyTransaction()
-        request = DummyRequest()
-        request.registry = Dummy(settings={})
-        request.registry.settings["tm.manager_hook"] = lambda request: txn
-        self.assertTrue(self._callFUT(request=request) is txn)
+        self.request.registry.settings["tm.manager_hook"] = lambda r: txn
+        self.assertTrue(self._callFUT() is txn)
 
+    def test_raises_attributeerror_if_tm_inactive(self):
+        del self.request.environ['tm.active']
+        self.assertRaises(AttributeError, self._callFUT)
 
 def veto_true(request, response):
     return True
