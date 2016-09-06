@@ -5,6 +5,12 @@ unreleased
 
 - Add Python 3.5 support.
 
+- Subtle bugs can occur if you use the transaction manager during a request
+  in which ``pyramid_tm`` is disabled via an ``activate_hook``. To combat these
+  types of errors, attempting to access ``request.tm`` will now raise an
+  ``AttributeError`` when ``pyramid_tm`` is inactive.
+  See https://github.com/Pylons/pyramid_tm/pull/46
+
 Changes
 =======
 

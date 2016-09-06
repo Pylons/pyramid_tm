@@ -42,17 +42,15 @@ def tm_tween_factory(handler, registry):
     assert attempts > 0
 
     def tm_tween(request):
-        if 'repoze.tm.active' in request.environ:
+        if (
             # don't handle txn mgmt if repoze.tm is in the WSGI pipeline
+            'repoze.tm.active' in request.environ or
+            # pyramid_tm should only be active once
+            'tm.active' in request.environ or
+            # check activation hooks
+            activate is not None and not activate(request)
+        ):
             return handler(request)
-
-        if 'tm.active' in request.environ:
-            # only one transaction manager can be active at once
-            return handler(request)
-
-        if activate is not None:
-            if not activate(request):
-                return handler(request)
 
         # Set a flag in the environment to enable the `request.tm` property.
         request.environ['tm.active'] = True
