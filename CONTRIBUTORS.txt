@@ -107,3 +107,4 @@ Contributors
 - Chris McDonough, 2014/11/12
 - Chris Rossi, 2014/11/20
 - Donald Stufft, 2015/02/02
+- Nick Stenning, 2016/09/06
