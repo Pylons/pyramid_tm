@@ -1,5 +1,8 @@
-unreleased
-==========
+Changes
+=======
+
+1.0 (2016-09-12)
+----------------
 
 - Drop Python 2.6, 3.2 and 3.3 support.
 
@@ -10,9 +13,6 @@ unreleased
   types of errors, attempting to access ``request.tm`` will now raise an
   ``AttributeError`` when ``pyramid_tm`` is inactive.
   See https://github.com/Pylons/pyramid_tm/pull/46
-
-Changes
-=======
 
 0.12.1 (2015-11-25)
 -------------------
