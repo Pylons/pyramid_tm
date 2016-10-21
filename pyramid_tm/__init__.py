@@ -114,9 +114,6 @@ def tm_tween_factory(handler, registry):
 
 
 def create_tm(request):
-    if 'tm.active' not in request.environ:
-        raise AttributeError('tm inactive for request or accessed above tm '
-                             'tween')
     manager_hook = request.registry.settings.get('tm.manager_hook')
     if manager_hook:
         manager_hook = resolver.maybe_resolve(manager_hook)

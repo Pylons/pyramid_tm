@@ -352,11 +352,8 @@ class Test_create_tm(unittest.TestCase):
     def setUp(self):
         self.request = DummyRequest()
         self.request.registry = Dummy(settings={})
-        # Get rid of the request.transaction attribute since it shouldn't be
-        # here yet.
+        # Get rid of the request.tm attribute since it shouldn't be here yet.
         del self.request.tm
-        # By default, behave as if we're in a request with the tm active.
-        self.request.environ['tm.active'] = True
 
 
     def tearDown(self):
@@ -375,10 +372,6 @@ class Test_create_tm(unittest.TestCase):
         txn = DummyTransaction()
         self.request.registry.settings["tm.manager_hook"] = lambda r: txn
         self.assertTrue(self._callFUT() is txn)
-
-    def test_raises_attributeerror_if_tm_inactive(self):
-        del self.request.environ['tm.active']
-        self.assertRaises(AttributeError, self._callFUT)
 
 def veto_true(request, response):
     return True
