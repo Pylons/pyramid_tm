@@ -1,6 +1,15 @@
 Changes
 =======
 
+unreleased
+----------
+
+- Removes the ``AttributeError`` when ``request.tm`` is accessed outside the
+  tween. It turns out this broke subrequests as well as ``pshell`` and
+  ``pyramid.paster.bootstrapp`` CLI scripts, especially when using the
+  global transaction manager which can be tracked outside of the tween.
+  See https://github.com/Pylons/pyramid_tm/pull/48
+
 1.0 (2016-09-12)
 ----------------
 
