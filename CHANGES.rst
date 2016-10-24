@@ -1,8 +1,8 @@
 Changes
 =======
 
-unreleased
-----------
+1.0.1 (2016-10-24)
+------------------
 
 - Removes the ``AttributeError`` when ``request.tm`` is accessed outside the
   tween. It turns out this broke subrequests as well as ``pshell`` and
