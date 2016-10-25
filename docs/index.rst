@@ -10,15 +10,15 @@ Overview
 the active :term:`transaction` as provided by the Python `transaction 
 <http://pypi.python.org/pypi/transaction>`_ package. (See the `documentation
 for the transaction package 
-<http://zodb.readthedocs.org/en/latest/transactions.html>`_ for an
+<http://zodb.readthedocs.io/en/latest/transactions.html>`_ for an
 explanation of what "joining the active transaction" means).
 
 Installation
 ------------
 
-Install using setuptools, e.g. (within a virtualenv)::
+Install using pip, e.g. (within a virtualenv)::
 
-  $ easy_install pyramid_tm
+  $ pip install pyramid_tm
 
 Setup
 -----
@@ -79,8 +79,8 @@ example of how files creation can be committed or rolled back based on
 <http://docs.pylonsproject.org/projects/pyramid_mailer/dev/>`_ package to see
 how you can prevent emails from being sent until a transaction succeeds.
 ZODB database connections are automatically joined to the transaction, as
-well as SQLAlchemy connections which are configured with the
-``ZopeTransactionExtension`` extension from the `zope.sqlalchemy
+well as SQLAlchemy connections which are configured with
+``zope.sqlalchemy.register(session)`` from the `zope.sqlalchemy
 <https://pypi.python.org/pypi/zope.sqlalchemy>`_ package.
 
 
@@ -114,13 +114,16 @@ To enable this hook, add it as the ``tm.manager_hook`` setting in your app.
        # ...
 
 The current transaction manager being used for any particular request can
-always be accessed on the request as ``request.tm``.
+always be accessed on the request as ``request.tm`` so long as it is accessed
+while the ``pyramid_tm`` tween is active. If you try to access ``request.tm``
+outside of the tween or during a request in which ``pyramid_tm`` was disabled,
+``request.tm`` will raise an ``AttributeError``.
 
 
 Adding an Activation Hook
 -------------------------
 
-It may not always be desireable to have every request managed by the
+It may not always be desirable to have every request managed by the
 transaction manager automatically. It is possible to configure ``pyramid_tm``
 with an "activate" hook. The callback function receives the request. It
 can then examine it and return ``False`` if the transaction manager should
@@ -244,9 +247,9 @@ Retrying
 --------
 
 When the transaction manager calls the downstream handler, if the handler
-raises a "retryable" exception, the transaction manager can be configured to
-attempt to call the downstream handler again with the same request, in effect
-"replaying" the request.
+raises a :term:`retryable` exception, the transaction manager can be configured
+to attempt to call the downstream handler again with the same request, in
+effect "replaying" the request.
 
 By default, retrying is turned off.  To turn it on, use the
 ``tm.attempts`` configuration setting.  By default this setting is
@@ -273,12 +276,33 @@ Or this might happen:
 
 - The response is returned to the caller.
 
-Retryable exceptions include ```ZODB.POSException.ConflictError``, and
+Retryable exceptions include ``ZODB.POSException.ConflictError``, and
 certain exceptions raised by various data managers, such as
 ``psycopg2.extensions.TransactionRollbackError``, ``cx_Oracle.DatabaseError``
 where the exception's code is 8877.  Any exception which inherits from
 ``transaction.interfaces.TransientError`` will be treated with retry
 behavior.
+
+In order for the replay to work there are a few things to note about how
+your application is affected:
+
+- ``pyramid_tm`` must ensure that the ``request`` is seekable such that the
+  ``request.body_file`` can be rewound back to the start when the request is
+  replayed. This means a streaming request body will be read and buffered.
+
+- ``pyramid_tm`` must make a new ``request`` object for each attempt. This
+  means any data computed and stored on the ``request`` will be cleared
+  prior to the next attempt. However, anything stored in the ``environ`` is
+  shared across attempts.
+
+- As subsequent replay attempts are made using new ``request`` objects, any
+  tween wrapping ``pyramid_tm`` may not depend on values being set on the
+  ``request`` object below ``pyramid_tm``. The tween may not have a reference
+  to the ``request`` that was actually used to compute the response.
+
+  However, exception information (``request.exception`` and
+  ``request.exc_info``) **will** be propagated to the original ``request``
+  such that it may be inspected by wrapping tweens.
 
 Explicit Tween Configuration
 ----------------------------
@@ -289,12 +313,13 @@ incorrect (see the output of ``paster ptweens``)::
 
    [app:myapp]
    pyramid.tweens = someothertween
-                    pyramid.tweens.excview_tween_factory
                     pyramid_tm.tm_tween_factory
+                    pyramid.tweens.excview_tween_factory
 
-It usually belongs directly above the "MAIN" entry in the ``paster ptweens``
+It usually belongs directly above the
+"pyramid.tweens.excview_tween_factory" entry in the ``paster ptweens``
 output, and will attempt to sort there by default as the result of having
-``include('pyramid_tm')`` invoked.
+``config.include('pyramid_tm')`` invoked.
 
 Avoid Accessing the Authentication Policy
 -----------------------------------------

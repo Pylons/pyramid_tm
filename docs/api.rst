@@ -13,3 +13,10 @@
 
 .. autofunction:: create_tm
 
+.. autofunction:: is_exc_retryable
+
+.. autofunction:: is_last_attempt
+
+.. autoclass:: LastAttemptPredicate
+
+.. autoclass:: RetryableExceptionPredicate

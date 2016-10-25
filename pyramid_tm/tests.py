@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import itertools
 import unittest
+import sys
 import transaction
 from transaction import TransactionManager
 from pyramid import testing
@@ -60,8 +62,9 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.txn = DummyTransaction()
         self.request = DummyRequest()
         self.response = DummyResponse()
-        self.registry = DummyRegistry()
-        self.config = testing.setUp()
+        self.config = testing.setUp(request=self.request)
+        self.registry = self.config.registry
+        self.settings = self.registry.settings
 
     def tearDown(self):
         testing.tearDown()
@@ -96,16 +99,16 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertFalse(self.txn.began)
 
     def test_should_activate_true(self):
-        registry = DummyRegistry(
+        self.settings.update(
             {'tm.activate_hook':'pyramid_tm.tests.activate_true'})
-        result = self._callFUT(registry=registry)
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
 
     def test_should_activate_false(self):
-        registry = DummyRegistry(
+        self.settings.update(
             {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
-        result = self._callFUT(registry=registry)
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
 
@@ -121,12 +124,13 @@ class Test_tm_tween_factory(unittest.TestCase):
         from transaction.interfaces import TransientError
         class Conflict(TransientError):
             pass
-        count = []
+        requests = []
         response = DummyResponse()
-        self.registry.settings['tm.attempts'] = '3'
-        def handler(request, count=count):
-            count.append(True)
-            if len(count) == 3:
+        self.settings['tm.attempts'] = '3'
+        self.config.set_request_factory(lambda e: DummyRequest(environ=e))
+        def handler(request):
+            requests.append(request)
+            if len(requests) == 3:
                 return response
             raise Conflict
         txn = DummyTransaction(retryable=True)
@@ -134,8 +138,11 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(txn.began)
         self.assertEqual(txn.committed, 1)
         self.assertEqual(txn.aborted, 2)
-        self.assertEqual(self.request.made_seekable, 3)
+        self.assertEqual(self.request.made_seekable, 1)
         self.assertEqual(result, response)
+        self.assertEqual(len(requests), 3)
+        for a, b in itertools.combinations(requests, 2):
+            self.assertNotEqual(a, b)
 
     def test_handler_retryable_exception_defaults_to_1(self):
         from transaction.interfaces import TransientError
@@ -145,6 +152,35 @@ class Test_tm_tween_factory(unittest.TestCase):
         def handler(request, count=count):
             raise Conflict
         self.assertRaises(Conflict, self._callFUT, handler=handler)
+
+    def test_handler_retryable_exception_is_caught(self):
+        from transaction.interfaces import TransientError
+        requests = []
+        response = DummyResponse()
+        self.settings['tm.attempts'] = '3'
+        self.config.set_request_factory(lambda e: DummyRequest(environ=e))
+        class Conflict(TransientError):
+            pass
+        def handler(request):
+            requests.append(request)
+            try:
+                raise Conflict
+            except Conflict as e:
+                # pretend to be the excview tween
+                request.exception = e
+                request.exc_info = sys.exc_info()
+            # pretend to return a response after handling the exception
+            return response
+        txn = DummyTransaction(retryable=True)
+        result = self._callFUT(handler=handler, txn=txn)
+        self.assertTrue(txn.began)
+        self.assertEqual(txn.committed, 0)
+        self.assertEqual(txn.aborted, 3)
+        self.assertEqual(self.request.made_seekable, 1)
+        self.assertEqual(result, response)
+        self.assertEqual(len(requests), 3)
+        for a, b in itertools.combinations(requests, 2):
+            self.assertNotEqual(a, b)
 
     def test_handler_isdoomed(self):
         txn = DummyTransaction(True)
@@ -179,8 +215,8 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_disables_user_annotation(self):
         self.config.testing_securitypolicy(userid="nope")
-        registry = DummyRegistry({"tm.annotate_user": 'false'})
-        result = self._callFUT(registry=registry)
+        self.settings['tm.annotate_user'] = 'false'
+        result = self._callFUT()
         self.assertEqual(self.txn.username, None)
 
     def test_handler_notes(self):
@@ -249,14 +285,14 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(result, ['active'])
 
     def test_active_flag_not_set_activate_false(self):
-        registry = DummyRegistry(
+        self.settings.update(
             {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
         result = []
         def handler(request):
             if 'tm.active' not in request.environ:
                 result.append('not active')
             return self.response
-        self._callFUT(handler=handler, registry=registry)
+        self._callFUT(handler=handler)
         self.assertEqual(result, ['not active'])
 
     def test_active_flag_unset_on_egress(self):
@@ -306,26 +342,24 @@ class Test_tm_tween_factory(unittest.TestCase):
         response.status = '500 Bad Request'
         def handler(request):
             return response
-        registry = DummyRegistry({'tm.commit_veto':None})
-        result = self._callFUT(handler=handler, registry=registry)
+        self.settings.update({'tm.commit_veto':None})
+        result = self._callFUT(handler=handler)
         self.assertEqual(result, response)
         self.assertTrue(self.txn.began)
         self.assertFalse(self.txn.aborted)
         self.assertTrue(self.txn.committed)
 
     def test_commit_veto_true(self):
-        registry = DummyRegistry(
-            {'tm.commit_veto':'pyramid_tm.tests.veto_true'})
-        result = self._callFUT(registry=registry)
+        self.settings.update({'tm.commit_veto':'pyramid_tm.tests.veto_true'})
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
         self.assertTrue(self.txn.aborted)
         self.assertFalse(self.txn.committed)
 
     def test_commit_veto_false(self):
-        registry = DummyRegistry(
-            {'tm.commit_veto':'pyramid_tm.tests.veto_false'})
-        result = self._callFUT(registry=registry)
+        self.settings.update({'tm.commit_veto':'pyramid_tm.tests.veto_false'})
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
         self.assertFalse(self.txn.aborted)
@@ -339,9 +373,9 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.committed)
 
     def test_commit_veto_alias(self):
-        registry = DummyRegistry(
+        self.settings.update(
             {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_true'})
-        result = self._callFUT(registry=registry)
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
         self.assertTrue(self.txn.aborted)
@@ -390,13 +424,17 @@ create_manager = None
 class Test_includeme(unittest.TestCase):
     def test_it(self):
         from pyramid.tweens import EXCVIEW
-        from pyramid_tm import includeme
+        from pyramid_tm import (includeme, create_tm, LastAttemptPredicate,
+                                RetryableExceptionPredicate)
         config = DummyConfig()
         includeme(config)
         self.assertEqual(config.tweens,
-                         [('pyramid_tm.tm_tween_factory', EXCVIEW, None)])
+                         [('pyramid_tm.tm_tween_factory', None, EXCVIEW)])
         self.assertEqual(config.request_methods,
-                         [('pyramid_tm.create_tm', 'tm', True)])
+                         [(create_tm, 'tm', True)])
+        self.assertEqual(config.view_predicates, [
+            ('tm_last_attempt', LastAttemptPredicate, None, None),
+            ('tm_exc_is_retryable', RetryableExceptionPredicate, None, None)])
         self.assertEqual(len(config.actions), 1)
         self.assertEqual(config.actions[0][0], None)
         self.assertEqual(config.actions[0][2], 10)
@@ -476,16 +514,108 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(resp.body, b'failure')
         self.assertEqual(dm.action, 'abort')
 
+    def test_last_attempt_error_view(self):
+        from transaction.interfaces import TransientError
+        class Conflict(TransientError):
+            pass
+        config = self.config
+        requests = []
+        dm = DummyDataManager()
+        def view(request):
+            requests.append(request)
+            dm.bind(request.tm)
+            raise Conflict
+        config.add_view(view)
+        def exc_view(request):
+            return 'failure'
+        def last_exc_view(request):
+            return 'last failure'
+        config.add_settings({'tm.attempts': 2})
+        config.add_view(exc_view, context=Exception, tm_last_attempt=False,
+                        renderer='string')
+        config.add_view(last_exc_view, context=Exception, tm_last_attempt=True,
+                        renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'last failure')
+        self.assertEqual(dm.action, 'abort')
+        self.assertEqual(len(requests), 2)
+
+    def test_last_attempt_true_without_tm(self):
+        config = self.config
+        def view(request):
+            return 'ok'
+        config.add_view(view, tm_last_attempt=True, renderer='string')
+        config.add_settings({'tm.activate_hook': lambda r: False})
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'ok')
+
+    def test_retryable_error_view(self):
+        from transaction.interfaces import TransientError
+        class Conflict(TransientError):
+            pass
+        config = self.config
+        requests = []
+        dm = DummyDataManager()
+        def view(request):
+            requests.append(request)
+            dm.bind(request.tm)
+            if len(requests) == 1:
+                raise Conflict
+            raise ValueError
+        config.add_view(view)
+        def exc_view(request):
+            return 'other failure'
+        def retryable_exc_view(request):
+            return 'retryable failure'
+        config.add_settings({'tm.attempts': 2})
+        config.add_view(exc_view, context=Exception, tm_exc_is_retryable=False,
+                        renderer='string')
+        config.add_view(retryable_exc_view, context=Exception, tm_exc_is_retryable=True,
+                        renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'other failure')
+        self.assertEqual(dm.action, 'abort')
+        self.assertEqual(len(requests), 2)
+
+    def test_retryable_error_predicate_fails_without_exception(self):
+        config = self.config
+        def view(request):
+            return 'normal'
+        def retryable_view(request): # pragma: no cover
+            return 'retryable'
+        config.add_view(view, renderer='string')
+        config.add_view(retryable_view, tm_exc_is_retryable=True)
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'normal')
+
+    def test_retryable_is_false_without_tm(self):
+        from transaction.interfaces import TransientError
+        class Conflict(TransientError):
+            pass
+        config = self.config
+        def view(request):
+            raise Conflict
+        config.add_view(view)
+        def retryable_exc_view(request): # pragma: no cover
+            return 'retryable'
+        def nonretryable_exc_view(request):
+            return 'non retryable'
+        config.add_view(retryable_exc_view, context=Exception,
+                        tm_exc_is_retryable=True)
+        config.add_view(nonretryable_exc_view, context=Exception,
+                        tm_exc_is_retryable=False, renderer='string')
+        config.add_settings({'tm.activate_hook': lambda r: False})
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'non retryable')
+
 class Dummy(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
-
-class DummyRegistry(object):
-    def __init__(self, settings=None):
-        if settings is None:
-            settings = {}
-        self.settings = settings
-
 
 class DummyTransaction(TransactionManager):
     began = False
@@ -506,7 +636,7 @@ class DummyTransaction(TransactionManager):
         if self.active:
             return self.retryable
 
-    def get(self):
+    def get(self): # pragma: no cover
         return self
 
     def setUser(self, name, path='/'):
@@ -567,6 +697,9 @@ class DummyRequest(testing.DummyRequest):
     def make_body_seekable(self):
         self.made_seekable += 1
 
+    def invoke_subrequest(self, request, use_tweens): # pragma: no cover
+        pass
+
 class DummyResponse(object):
     def __init__(self, status='200 OK', headers=None):
         self.status = status
@@ -580,9 +713,14 @@ class DummyConfig(object):
         self.tweens = []
         self.request_methods = []
         self.actions = []
+        self.view_predicates = []
+        self.views = []
 
     def add_tween(self, x, under=None, over=None):
         self.tweens.append((x, under, over))
+
+    def add_view_predicate(self, name, predicate, under=None, over=None):
+        self.view_predicates.append((name, predicate, under, over))
 
     def add_request_method(self, x, name=None, reify=None):
         self.request_methods.append((x, name, reify))
