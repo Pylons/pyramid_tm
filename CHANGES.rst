@@ -1,6 +1,13 @@
 Changes
 =======
 
+1.0.2 (2016-11-18)
+------------------
+
+- Pin to ``transaction < 1.99`` as pyramid_tm is currently incompatible with
+  the new 2.x release of transaction.
+  See https://github.com/Pylons/pyramid_tm/issues/49
+
 1.0.1 (2016-10-24)
 ------------------
 
