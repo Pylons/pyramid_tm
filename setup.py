@@ -25,7 +25,7 @@ except IOError:
 
 install_requires = [
     'pyramid>=1.2dev',
-    'transaction < 1.99',
+    'transaction >= 2.0',
     ]
 
 tests_require = [

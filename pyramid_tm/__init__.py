@@ -6,7 +6,7 @@ from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
 
 from pyramid_tm.compat import reraise
-from pyramid_tm.compat import native_
+from pyramid_tm.compat import text_
 
 resolver = DottedNameResolver(None)
 
@@ -79,10 +79,10 @@ def tm_tween_factory(handler, registry):
                     request.make_body_seekable()
                 t = manager.get()
                 if userid:
-                    userid = native_(userid, 'utf-8')
+                    userid = text_(userid, 'utf-8')
                     t.setUser(userid, '')
                 try:
-                    t.note(native_(request.path_info, 'utf-8'))
+                    t.note(text_(request.path_info, 'utf-8'))
                 except UnicodeDecodeError:
                     t.note("Unable to decode path as unicode")
                 response = handler(request)
