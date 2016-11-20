@@ -1,6 +1,16 @@
 Changes
 =======
 
+1.1.0 (2016-11-19)
+------------------
+
+- Support ``transaction`` 2.x.
+
+- The transaction's request path and userid are now coerced to unicode by
+  first decoding as ``utf-8`` and falling back to ``latin-1``. If the userid
+  does not conform to these restrictions then set ``tm.annotate_user = no``
+  in your settings. See https://github.com/Pylons/pyramid_tm/pull/50
+
 1.0.2 (2016-11-18)
 ------------------
 
