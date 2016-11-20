@@ -322,6 +322,10 @@ tagged versions.
 
 Visit http://github.com/Pylons/pyramid_tm/issues to report bugs.
 
+
+.. include:: ../CHANGES.rst
+
+
 Indices and tables
 ------------------
 
