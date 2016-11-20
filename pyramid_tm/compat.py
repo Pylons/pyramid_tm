@@ -14,13 +14,6 @@ if PY3: # pragma: no cover
             raise value.with_traceback(tb)
         raise value
 
-    def native_(s, encoding='latin-1', errors='strict'):
-        if isinstance(s, text_type):
-            return s
-        if isinstance(s, binary_type):
-            return str(s, encoding, errors)
-        return str(s)
-
 else: # pragma: no cover
     def exec_(code, globs=None, locs=None):
         """Execute code in a namespace."""
@@ -40,8 +33,3 @@ else: # pragma: no cover
     exec_("""def reraise(tp, value, tb=None):
     raise tp, value, tb
 """)
-
-    def native_(s, encoding='latin-1', errors='strict'):
-        if isinstance(s, text_type):
-            return s.encode(encoding, errors)
-        return str(s)

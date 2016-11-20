@@ -156,37 +156,37 @@ class Test_tm_tween_factory(unittest.TestCase):
     def test_handler_w_native_unauthenticated_userid(self):
         self.config.testing_securitypolicy(userid='phred')
         self._callFUT()
-        self.assertEqual(self.txn.username, ' phred')
+        self.assertEqual(self.txn.user, u'phred')
 
-    def test_handler_w_unicode_unauthenticated_userid(self):
-        from pyramid_tm.compat import native_
-        from pyramid_tm.compat import PY3
+    def test_handler_w_utf8_unauthenticated_userid(self):
         USERID = b'phred/\xd1\x80\xd0\xb5\xd1\x81'.decode('utf-8')
         self.config.testing_securitypolicy(userid=USERID)
         self._callFUT()
-        if PY3:
-            self.assertEqual(self.txn.username, ' phred/рес')
-        else:
-            self.assertEqual(self.txn.username,
-                             ' ' + native_(USERID, 'utf-8'))
+        self.assertEqual(self.txn.user, u'phred/рес')
+
+    def test_handler_w_latin1_unauthenticated_userid(self):
+        USERID = b'\xc4\xd6\xdc'
+        self.config.testing_securitypolicy(userid=USERID)
+        self._callFUT()
+        self.assertEqual(self.txn.user, u'ÄÖÜ')
 
     def test_handler_w_integer_unauthenticated_userid(self):
         # See https://github.com/Pylons/pyramid_tm/issues/28
         USERID = 1234
         self.config.testing_securitypolicy(userid=USERID)
         self._callFUT()
-        self.assertEqual(self.txn.username, ' 1234')
+        self.assertEqual(self.txn.user, u'1234')
 
     def test_disables_user_annotation(self):
         self.config.testing_securitypolicy(userid="nope")
         registry = DummyRegistry({"tm.annotate_user": 'false'})
         result = self._callFUT(registry=registry)
-        self.assertEqual(self.txn.username, None)
+        self.assertEqual(self.txn.user, None)
 
     def test_handler_notes(self):
         self._callFUT()
         self.assertEqual(self.txn._note, '/')
-        self.assertEqual(self.txn.username, None)
+        self.assertEqual(self.txn.user, None)
 
     def test_handler_notes_unicode_decode_error(self):
         class DummierRequest(DummyRequest):
@@ -200,10 +200,9 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         self._callFUT(request=request)
         self.assertEqual(self.txn._note, 'Unable to decode path as unicode')
-        self.assertEqual(self.txn.username, None)
+        self.assertEqual(self.txn.user, None)
 
     def test_handler_notes_unicode_path(self):
-        from pyramid_tm.compat import PY3
         class DummierRequest(DummyRequest):
 
             def _get_path_info(self):
@@ -216,18 +215,14 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        if PY3:
-            self.assertEqual(self.txn._note, 'collection/рес')
-        else:
-            self.assertEqual(self.txn._note,
-                             'collection/\xd1\x80\xd0\xb5\xd1\x81')
-        self.assertEqual(self.txn.username, None)
+        self.assertEqual(self.txn._note, u'collection/рес')
+        self.assertEqual(self.txn.user, None)
 
     def test_handler_notes_native_str_path(self):
         class DummierRequest(DummyRequest):
 
             def _get_path_info(self):
-                return 'some/resource'
+                return u'some/resource'
 
             def _set_path_info(self, val):
                 pass
@@ -236,8 +231,8 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        self.assertEqual(self.txn._note, 'some/resource')
-        self.assertEqual(self.txn.username, None)
+        self.assertEqual(self.txn._note, u'some/resource')
+        self.assertEqual(self.txn.user, None)
 
     def test_active_flag_set_during_handler(self):
         result = []
@@ -486,13 +481,12 @@ class DummyRegistry(object):
             settings = {}
         self.settings = settings
 
-
 class DummyTransaction(TransactionManager):
     began = False
     committed = False
     aborted = False
     _resources = []
-    username = None
+    user = None
 
     def __init__(self, doomed=False, retryable=False):
         self.doomed = doomed
@@ -508,9 +502,6 @@ class DummyTransaction(TransactionManager):
 
     def get(self):
         return self
-
-    def setUser(self, name, path='/'):
-        self.username = "%s %s" % (path, name)
 
     def isDoomed(self):
         return self.doomed

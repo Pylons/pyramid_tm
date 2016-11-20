@@ -5,8 +5,8 @@ from pyramid.settings import asbool
 from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
 
-from pyramid_tm.compat import reraise
-from pyramid_tm.compat import native_
+from .compat import reraise
+from .compat import binary_type, text_type
 
 resolver = DottedNameResolver(None)
 
@@ -26,6 +26,14 @@ def default_commit_veto(request, response):
     if xtm is not None:
         return xtm != 'commit'
     return response.status.startswith(('4', '5'))
+
+def text_(s):
+    if isinstance(s, binary_type):
+        try:
+            return s.decode('utf-8')
+        except UnicodeDecodeError:
+            return s.decode('latin-1')
+    return text_type(s)
 
 class AbortResponse(Exception):
     def __init__(self, response):
@@ -66,6 +74,9 @@ def tm_tween_factory(handler, registry):
             else: # pragma no cover (for pyramid < 1.5)
                 from pyramid.security import unauthenticated_userid
                 userid = unauthenticated_userid(request)
+
+            if userid:
+                userid = text_(userid)
         else:
             userid = None
 
@@ -79,10 +90,9 @@ def tm_tween_factory(handler, registry):
                     request.make_body_seekable()
                 t = manager.get()
                 if userid:
-                    userid = native_(userid, 'utf-8')
-                    t.setUser(userid, '')
+                    t.user = userid
                 try:
-                    t.note(native_(request.path_info, 'utf-8'))
+                    t.note(text_(request.path_info))
                 except UnicodeDecodeError:
                     t.note("Unable to decode path as unicode")
                 response = handler(request)
