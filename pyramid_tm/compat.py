@@ -33,8 +33,3 @@ else: # pragma: no cover
     exec_("""def reraise(tp, value, tb=None):
     raise tp, value, tb
 """)
-
-def text_(s, encoding='latin-1', errors='strict'):
-    if isinstance(s, binary_type):
-        return s.decode(encoding, errors)
-    return text_type(s)
