@@ -1,8 +1,13 @@
 Changes
-=======
+-------
+
+Unreleased
+^^^^^^^^^^
+
+- Include Changes in the main docs.
 
 1.1.0 (2016-11-19)
-------------------
+^^^^^^^^^^^^^^^^^^
 
 - Support ``transaction`` 2.x.
 
@@ -12,14 +17,14 @@ Changes
   in your settings. See https://github.com/Pylons/pyramid_tm/pull/50
 
 1.0.2 (2016-11-18)
-------------------
+^^^^^^^^^^^^^^^^^^
 
 - Pin to ``transaction < 1.99`` as pyramid_tm is currently incompatible with
   the new 2.x release of transaction.
   See https://github.com/Pylons/pyramid_tm/issues/49
 
 1.0.1 (2016-10-24)
-------------------
+^^^^^^^^^^^^^^^^^^
 
 - Removes the ``AttributeError`` when ``request.tm`` is accessed outside the
   tween. It turns out this broke subrequests as well as ``pshell`` and
@@ -28,7 +33,7 @@ Changes
   See https://github.com/Pylons/pyramid_tm/pull/48
 
 1.0 (2016-09-12)
-----------------
+^^^^^^^^^^^^^^^^
 
 - Drop Python 2.6, 3.2 and 3.3 support.
 
@@ -41,7 +46,7 @@ Changes
   See https://github.com/Pylons/pyramid_tm/pull/46
 
 0.12.1 (2015-11-25)
--------------------
+^^^^^^^^^^^^^^^^^^^
 
 - Fix compatibility with 1.2 and 1.3 again. This wasn't fully fixed in the
   0.12 release as the tween was relying on request properties working (which
@@ -49,7 +54,7 @@ Changes
   See https://github.com/Pylons/pyramid_tm/pull/39
 
 0.12 (2015-05-20)
------------------
+^^^^^^^^^^^^^^^^^
 
 - Expose a ``tm.annotate_user`` option to avoid computing
   ``request.unauthenticated_userid`` on every request.
@@ -58,20 +63,20 @@ Changes
 - Restore compatibility with Pyramid 1.2 and 1.3.
 
 0.11 (2015-02-04)
------------------
+^^^^^^^^^^^^^^^^^
 
 - Add a hook to override creation of the transaction manager (the default
   remains the thread-local one accessed through ``transaction.manager``).
   See: https://github.com/Pylons/pyramid_tm/pull/31
 
 0.10 (2015-01-06)
------------------
+^^^^^^^^^^^^^^^^^
 
 - Fix recording transactions with non-text, non-bytes userids.
   See: https://github.com/Pylons/pyramid_tm/issues/28
 
 0.9 (2014-12-30)
-----------------
+^^^^^^^^^^^^^^^^
 
 - Work around recording transaction userid containing unicode.
   See https://github.com/Pylons/pyramid_tm/pull/15, although the fix
@@ -81,7 +86,7 @@ Changes
   https://github.com/Pylons/pyramid_tm/pull/25
 
 0.8 (2014-11-12)
-----------------
+^^^^^^^^^^^^^^^^
 
 - Add a new ``tm.activate_hook`` hook which can control when the
   transaction manager is active. For example, this may be useful in
@@ -96,18 +101,18 @@ Changes
 - Don't call ``setUser`` on transaction if there is no user logged in.
   This could cause the username set on the transaction to be a strange
   string: " None". https://github.com/Pylons/pyramid_tm/pull/9
-  
+
 - Avoid crash when the ``path_info`` cannot be decoded from the request
   object. https://github.com/Pylons/pyramid_tm/pull/19
 
 0.7 (2012-12-30)
-----------------
+^^^^^^^^^^^^^^^^
 
 - Write unauthenticated userid and ``request.path_info`` as transaction
   metadata via ``t.setUser`` and ``t.note`` respectively during a commit.
 
 0.6 (2012-12-26)
-----------------
+^^^^^^^^^^^^^^^^
 
 - Disuse the confusing and bug-ridden generator-plus-context-manager "attempts"
   mechanism from the transaction package for retrying retryable exceptions
@@ -115,7 +120,7 @@ Changes
   imperative logic instead.
 
 0.5 (2012-06-26)
-----------------
+^^^^^^^^^^^^^^^^
 
 Bug Fixes
 ~~~~~~~~~
@@ -126,7 +131,7 @@ Bug Fixes
   <somestorage> is not supported.`` would be swallowed inappropriately.
 
 0.4 (2012-03-28)
-----------------
+^^^^^^^^^^^^^^^^
 
 Bug Fixes
 ~~~~~~~~~
@@ -147,7 +152,7 @@ Testing
 - Squash test deprecation warnings under Python 3.2.
 
 0.3 (2011-09-27)
-----------------
+^^^^^^^^^^^^^^^^
 
 Features
 ~~~~~~~~
@@ -197,7 +202,7 @@ Backwards Incompatibilities
   custom commit veto function::
 
      def bwcompat_commit_veto_wrapper(request, response):
-         return my_custom_commit_veto(request.environ, response.status, 
+         return my_custom_commit_veto(request.environ, response.status,
                                       response.headerlist)
 
 Deprecations
@@ -208,7 +213,7 @@ Deprecations
   but may raise a deprecation error when used.
 
 0.2 (2011-07-18)
-----------------
+^^^^^^^^^^^^^^^^
 
 - A new header ``X-Tm`` is now honored by the ``default_commit_veto`` commit
   veto hook. If this header exists in the headerlist, its value must be a
@@ -219,7 +224,7 @@ Deprecations
   or the value of ``X-Tm-Abort``.
 
 0.1 (2011-02-23)
-----------------
+^^^^^^^^^^^^^^^^
 
 - Initial release, based on repoze.tm2
 
