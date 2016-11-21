@@ -4,6 +4,10 @@ Changes
 Unreleased
 ^^^^^^^^^^
 
+- ``pyramid_tm`` 1.1.0 failed to fix a unicode issue related to undecodable
+  request paths. The placeholder message was not unicode.
+  See https://github.com/Pylons/pyramid_tm/pull/52
+
 - Include Changes in the main docs.
 
 1.1.0 (2016-11-19)
