@@ -1,8 +1,8 @@
 Changes
 -------
 
-Unreleased
-^^^^^^^^^^
+1.1.1 (2016-11-21)
+^^^^^^^^^^^^^^^^^^
 
 - ``pyramid_tm`` 1.1.0 failed to fix a unicode issue related to undecodable
   request paths. The placeholder message was not unicode.
