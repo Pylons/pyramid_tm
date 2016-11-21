@@ -199,7 +199,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         request = DummierRequest()
 
         self._callFUT(request=request)
-        self.assertEqual(self.txn._note, 'Unable to decode path as unicode')
+        self.assertEqual(self.txn._note, u'Unable to decode path as unicode')
         self.assertEqual(self.txn.user, None)
 
     def test_handler_notes_unicode_path(self):

@@ -94,7 +94,7 @@ def tm_tween_factory(handler, registry):
                 try:
                     t.note(text_(request.path_info))
                 except UnicodeDecodeError:
-                    t.note("Unable to decode path as unicode")
+                    t.note(text_("Unable to decode path as unicode"))
                 response = handler(request)
                 if manager.isDoomed():
                     raise AbortResponse(response)
