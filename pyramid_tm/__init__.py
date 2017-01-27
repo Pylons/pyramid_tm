@@ -13,6 +13,9 @@ from pyramid.util import DottedNameResolver
 from pyramid_tm.compat import reraise
 from pyramid_tm.compat import native_
 
+from pyramid_tm.events import TransactionAttempt
+
+
 resolver = DottedNameResolver(None)
 
 
@@ -128,6 +131,9 @@ def tm_tween_factory(handler, registry):
                     t.note(native_(request.path_info, 'utf-8'))
                 except UnicodeDecodeError:
                     t.note("Unable to decode path as unicode")
+
+                e = TransactionAttempt(request, t, number)
+                registry.notify(e)
 
                 response = handler(request)
                 if manager.isDoomed():

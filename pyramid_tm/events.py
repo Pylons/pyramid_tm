@@ -1,0 +1,23 @@
+"""Transaction management related Pyramid events."""
+
+
+class TransactionAttempt(object):
+    """A web serving play will be attempted for a HTTP request.
+
+    This event is fired just before the tween enters to request handling.
+
+    * ``attempt_no == 0`` first attempt
+
+    * ``attempt_no > 0`` any subsequent attempts
+
+    :param request: Pyramid HTTP request object
+
+    :param tx: :py:class:`transaction.Transaction` object
+
+    :param attempt_no: Integer, 0 is the first request play attempt
+    """
+
+    def __init__(self, request, tx, attempt_no):
+        self.request = request
+        self.tx = tx
+        self.attempt_no = attempt_no
