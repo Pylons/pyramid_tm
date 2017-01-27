@@ -37,7 +37,7 @@ integration_tests_require = [
     'requests',
     'zope.sqlalchemy',
     'psycopg2',
-    "py.test",
+    "pytest",
 ]
 
 

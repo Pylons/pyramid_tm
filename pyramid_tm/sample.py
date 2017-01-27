@@ -47,9 +47,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
 
-    username = Column(String, unique=True)
-
-    #: Used to see all requests go through
+    #: We use this column to cause transaction conflicts by incrementing the
+    #: column in different transactions at the same time
     counter = Column(Integer, default=0)
 
 
@@ -59,7 +58,10 @@ def create_engine(registry):
 
 
 def create_session(registry, engine, transaction_manager):
-    """Create a new database session from a process specific connection pool."""
+    """Create a new database session from a process specific connection pool.
+
+    We do not use thread-local transaaction.manager, but expose the transaction manager as dbsession.tm attribute.
+    """
 
     # Make sure we create session maker only once per process,
     # as otherwise SQLAlchemy connection pooling doesn't work.
@@ -99,13 +101,14 @@ def hit_user(request):
 
 @view_config(context=Exception)
 def exception_view(request):
-    """A view point hammering user, with random delays to simulate transaction conflict."""
+    """This is were we end up if the transaction conflict cannot be resolved."""
     global exceptions_views
     exceptions_views += 1
     return HTTPInternalServerError("Ei mennyt niin kuin strömsöössä")
 
 
 def includeme(config):
+    """Set up the sample application."""
     from pyramid_tm import sample
 
     def dbsession(request):
