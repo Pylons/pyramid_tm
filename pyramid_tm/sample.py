@@ -18,7 +18,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (
     sessionmaker,
     )
-from websauna.system.model.meta import get_engine
 
 import zope.sqlalchemy
 
@@ -70,7 +69,7 @@ def create_session(registry, engine, transaction_manager):
     db_session_maker = getattr(registry, "db_session_maker", None)
 
     if not db_session_maker:
-        engine = get_engine(registry.settings)
+        engine = create_engine(registry)
 
         dbmaker = sessionmaker()
         dbmaker.configure(bind=engine)
