@@ -1,6 +1,9 @@
 language: python
 sudo: false
 
+services:
+  - postgresql
+
 matrix:
     include:
         - python: 2.7
@@ -20,6 +23,9 @@ matrix:
 
 install:
   - travis_retry pip install tox
+
+before_script:
+  - - psql -c 'create database pyramid_tm_integration;' -U postgres
 
 script:
   - travis_retry tox
