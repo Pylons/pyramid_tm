@@ -96,6 +96,42 @@ Example:
 
    config.add_tween("myapp.tweens.factory", under="pyramid_tm.tm_tween_factory")
 
+Accessing Transaction within the Exception View
+-----------------------------------------------
+
+Pyramid provides an exception view that can render HTTP 500 Internal Server
+error page. Depending on the context, which is the exception, it may or
+may not be safe to access transactional data, transaction aware reified
+variables and such in the exception view.
+
+To make sure that your exception view behaves well in the both context
+you can do:
+
+.. code-block:: python
+   :linenos:
+
+   from pyramid_tm.reify can_access_transaction_in_excview
+
+
+   @view_config(context=Exception)
+   def exception_view(context, request):
+       """Example of transaction retry aware exception view.
+
+       :param context: The exception raised in the real view
+       """
+
+       if can_access_transaction_in_excview(context, request):
+           # You can access e.g. request.user that is a transaction aware reified property.
+           # (just demonstrate how to access database inside the exception view handled)
+           print(request.user.id)
+       else:
+           # It is not safe to
+           # May cause SQLAlchemy DetachedInstanceError or
+           # SQLAlchemy OperationalError
+           pass
+
+       return HTTPInternalServerError("It's coming down burning.")
+
 Custom Transaction Managers
 ---------------------------
 

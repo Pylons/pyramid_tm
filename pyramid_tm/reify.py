@@ -1,5 +1,6 @@
 """Transaction aware reify helpers."""
 from pyramid.events import subscriber
+from pyramid_tm import is_exc_retryable
 
 from .events import TransactionAttempt
 
@@ -9,6 +10,7 @@ _marker = object()
 
 def _subscribe_transaction_replay(config):
     config.add_subscriber(on_transaction_attempt_reset_reify, TransactionAttempt)
+    config.add_request_method(can_access_transaction_in_excview, "can_access_transaction_in_excview")
     config.registry._transaction_aware_request_registered = True
 
 
@@ -70,6 +72,41 @@ def transaction_aware_reify(
 
 @subscriber(TransactionAttempt)
 def on_transaction_attempt_reset_reify(e):
+    reset_transaction_aware_properties(e.request)
+
+
+def reset_transaction_aware_properties(request):
+    """Reset all transaction aware properties on a request.
+
+    You can call this e.g. when you need to abort the transaction manually in an internal server error view.
+    """
     # This is the internal map where we are store reified results
     # over the request play
-    e.request._transaction_properties = {}
+    request._transaction_properties = {}
+
+
+def can_access_transaction_in_excview(exc, request):
+    """Tell if it's ok to try to access database within the exception view.
+
+    Because the exception view tween is executed the before th transaction tween, the transaction tween cannot enforce and delete reified transaction aware properties on a request in the case we have a conflict exception. Instead, the exception view must be careful and manually check the given exception before accessing any tranaction aware properties.
+
+    This helper function is an API function to tell if it's safe to access reified methods or database in the exception view.
+
+    It it safe to call this function only inside the exception view.
+
+    :param request: HTTP request
+    :param exc: Exception, the same as context paramter to the exception view
+    :return: True if you can read e.g. request.user in the exception view
+    """
+
+    if exc is None:
+        return False
+
+    if is_exc_retryable(request, request.exc_info):
+        # We got a transaction conflict exception ending up to the exception view.
+        # It means we are out of transaction retry attemps.
+        # It means database is having issues.
+        # Don't try to access database in the exception view.
+        return False
+
+    return True

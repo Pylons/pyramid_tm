@@ -33,6 +33,10 @@ def registry(configurator):
 def app(configurator):
     configurator.include("pyramid_tm")
     configurator.include(sample)
+
+    # We lamely use module globals to communicate the internal application state
+    sample.reset_test_counters()
+
     return configurator.make_wsgi_app()
 
 
@@ -109,8 +113,6 @@ def test_resolvable(web_server, user, dbsession):
     We are configured to two replay attempts.
     """
 
-    sample.reset_test_counters()
-
     def hit_user():
         return requests.get(web_server + "/hit_user")
 
@@ -144,8 +146,6 @@ def test_unresolvable(web_server, user, dbsession):
     """Check for a conflict the pyramid_tm fails to resolve after retry attempt exceeed.
     We are configured to two replay attempts.
     """
-
-    sample.reset_test_counters()
 
     def hit_user():
         return requests.get(web_server + "/hit_user")
@@ -187,7 +187,24 @@ def test_unresolvable(web_server, user, dbsession):
     # up the exception view
     assert sample.exceptions_views == 1
 
+    # We could not record the user id in the exception, because
+    # database was not available
+    assert sample.exc_user_id is None
+
     with dbsession.tm:
         # The database counted correctly
         user = dbsession.query(sample.User).one()
         assert user.counter == 2
+
+
+def test_access_database_in_the_exception_view(web_server, user, dbsession):
+    """It is safe to access the database in the exception view unless there is a transaction conflict."""
+
+    resp = requests.get(web_server + "/kaboom")
+    assert resp.status_code == 500
+
+    with dbsession.tm:
+        # The database counted correctly
+        user = dbsession.query(sample.User).one()
+        assert user.id == sample.exc_user_id
+

@@ -21,8 +21,7 @@ from sqlalchemy.orm import (
 
 import zope.sqlalchemy
 
-from pyramid_tm.reify import transaction_aware_reify
-
+from pyramid_tm.reify import transaction_aware_reify, can_access_transaction_in_excview
 
 CONFIG = {
     "sqlalchemy.url": "postgresql://localhost/pyramid_tm_integration",
@@ -37,6 +36,7 @@ Base = declarative_base()
 # How many time we hit different end points for a request
 hit_views = 0
 exceptions_views = 0
+exc_user_id = None
 
 
 class User(Base):
@@ -98,11 +98,30 @@ def hit_user(request):
     return HTTPOk("OK")
 
 
+@view_config(route_name="kaboom")
+def kaboom(request):
+    """Cause the triggering of the exception view."""
+    raise RuntimeError("Not feeling good. Note to myself: Don't enter the bar with the Dutchies.")
+
+
 @view_config(context=Exception)
 def exception_view(context, request):
-    """This is were we end up if the transaction conflict cannot be resolved."""
+    """This is were we end up if the transaction conflict cannot be resolved.
+
+    :param context: The exception raised in the real view
+    """
     global exceptions_views
+    global exc_user_id
     exceptions_views += 1
+
+    if can_access_transaction_in_excview(context, request):
+        # Log the user that caused the exception
+        # (just demonstrate how to access database inside the exception view handled)
+        exc_user_id = request.user.id
+    else:
+        # It is not safe to poke the db
+        exc_user_id = None
+
     print("Exception fall through", context)  # This is to debug Travis
     return HTTPInternalServerError("Ei mennyt niin kuin strömsöössä")
 
@@ -121,6 +140,7 @@ def includeme(config):
 
     config.add_route("hit_user", "/hit_user")
     config.add_route("exception_view", "/exception_view")
+    config.add_route("kaboom", "/kaboom")
     config.add_request_method(dbsession, "dbsession", reify=True)
     config.add_request_method(
         callable=transaction_aware_reify(config, get_user),
@@ -134,5 +154,7 @@ def includeme(config):
 def reset_test_counters():
     global hit_views
     global exceptions_views
+    global exc_user_id
     hit_views = 0
     exceptions_views = 0
+    exc_user_id = None

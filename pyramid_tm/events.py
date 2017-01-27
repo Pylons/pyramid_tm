@@ -24,3 +24,14 @@ class TransactionAttempt(object):
         self.tx = tx
         self.attempt_no = attempt_no
         self.attempts = attempts
+
+
+class TransactionAborted(object):
+    """We run out of attempts and the request could not be successfully played.
+
+    This event is fired after the transaction has been rolled back. Any access to transaction aware databases should be avoided after this event.
+    """
+
+    def __init__(self, request, tx):
+        self.request = request
+        self.tx = tx
