@@ -36,6 +36,12 @@ def transaction_aware_reify(
             reify=False)
 
     TODO: This could not be made a config directive, as having feature parity with add_request_method would force us to touch a lot of Pyramid internal APIs.
+
+    :param config: Instance of :py:class:`pyramid.config.Configurator`
+
+    :param callable: A function that takes ``request`` as a first arguments and plays around transaction aware stuff like databases
+
+    :param name: (Optional) used internally to the reified stored value map
     """
 
     if name is None:

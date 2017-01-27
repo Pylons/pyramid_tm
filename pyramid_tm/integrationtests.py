@@ -1,6 +1,6 @@
-"""Functional test suite to ensure transactions are correctly replayed.
+"""A test suite exercising full stack integration.
 
-See transaction replays and reifiers work correctly with PostgreSQL.
+See transaction replays and reifiers work correctly with PostgreSQL, Pyramid, pyramid_tm and zope.sqlalchemy.
 """
 import threading
 
