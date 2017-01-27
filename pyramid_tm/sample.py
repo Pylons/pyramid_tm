@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
 """Integration example code."""
 
 import random
 import time
+
+from pyramid.httpexceptions import HTTPOk, HTTPInternalServerError
 from pyramid.view import view_config
 from sqlalchemy import (
     Column,
@@ -23,7 +26,10 @@ from pyramid_tm.reify import transaction_aware_reify
 
 
 CONFIG = {
-    "sqlalchemy.url": "postgresql://localhost/pyramid_tm_integration"
+    "sqlalchemy.url": "postgresql://localhost/pyramid_tm_integration",
+
+    # We can handle up to 2 conflicting transactions before one request falls flat
+    "tm.attempts": 2,
 }
 
 
@@ -49,6 +55,7 @@ class User(Base):
 
 def create_engine(registry):
     engine = engine_from_config(registry.settings, 'sqlalchemy.', client_encoding='utf8', isolation_level='SERIALIZABLE')
+    return engine
 
 
 def create_session(registry, engine, transaction_manager):
@@ -83,21 +90,19 @@ def hit_user(request):
     """A view point hammering user, with random delays to simulate transaction conflict."""
     user = request.user
     user.counter += 1
-    time.sleep(0.1 + random.random(0.5))
+    time.sleep(0.1 + random.random())
 
     global hit_views
     hit_views += 1
+    return HTTPOk("OK")
 
 
-@view_config(route_name="exception_view")
+@view_config(context=Exception)
 def exception_view(request):
     """A view point hammering user, with random delays to simulate transaction conflict."""
-    user = request.user
-    user.counter += 1
-    time.sleep(0.1 + random.random(0.5))
-
-    global hit_views
-    hit_views += 1
+    global exceptions_views
+    exceptions_views += 1
+    return HTTPInternalServerError("Ei mennyt niin kuin strömsöössä")
 
 
 def includeme(config):
@@ -114,11 +119,16 @@ def includeme(config):
     config.add_route("hit_user", "/hit_user")
     config.add_route("exception_view", "/exception_view")
     config.add_request_method(dbsession, "dbsession", reify=True)
-    config.add_request_method(transaction_aware_reify(config, get_user), "user", reify=False)
+    config.add_request_method(
+        callable=transaction_aware_reify(config, get_user),
+        name="user",
+        property=True,
+        reify=False)
+
     config.scan(sample)
 
 
-def reset_test_counts():
+def reset_test_counters():
     global hit_views
     global exceptions_views
     hit_views = 0

@@ -57,6 +57,7 @@ def tm_tween_factory(handler, registry):
     assert attempts > 0
 
     def tm_tween(request):
+
         if (
             # don't handle txn mgmt if repoze.tm is in the WSGI pipeline
             'repoze.tm.active' in request.environ or
@@ -132,7 +133,7 @@ def tm_tween_factory(handler, registry):
                 except UnicodeDecodeError:
                     t.note("Unable to decode path as unicode")
 
-                e = TransactionAttempt(request, t, number)
+                e = TransactionAttempt(request, t, number, attempts)
                 registry.notify(e)
 
                 response = handler(request)
@@ -344,4 +345,3 @@ def includeme(config):
             config.registry.settings["tm.manager_hook"] = manager_hook
 
     config.action(None, ensure, order=10)
-    config.add_directive("add_transaction_aware_request_method", "pyramid_tm.reify.add_transaction_aware_request_method")

@@ -15,9 +15,12 @@ class TransactionAttempt(object):
     :param tx: :py:class:`transaction.Transaction` object
 
     :param attempt_no: Integer, 0 is the first request play attempt
+
+    :param attempts: Total number of attempts before pyramid_tm gives up
     """
 
-    def __init__(self, request, tx, attempt_no):
+    def __init__(self, request, tx, attempt_no, attempts):
         self.request = request
         self.tx = tx
         self.attempt_no = attempt_no
+        self.attempts = attempts

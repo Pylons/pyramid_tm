@@ -29,14 +29,14 @@ def transaction_aware_reify(
         result = request._transaction_properties.get(name, _marker)
         if result is _marker:
             # Perform expensive transaction aware computation
-            result = request._transaction_properties[name] = callable()
+            result = request._transaction_properties[name] = callable(request)
         return result
 
     # Register our transaction event handler
     if getattr(config.registry, "_transaction_aware_request_registered", None) is None:
         _subscribe_transaction_replay(config)
 
-    config.add_request_method(_reify, name)
+    return _reify
 
 
 @subscriber(TransactionAttempt)
