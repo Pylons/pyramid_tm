@@ -18,6 +18,23 @@ def transaction_aware_reify(
         name=None):
     """Make a request property reified in a transaction aware manner.
 
+    Use this reifier for database aware request properties.
+
+    IF there is a replay attempt due to a transaction conflict the result of the reified data is reset and looked up again on the next request play.
+
+    Example:
+
+    .. code-block:: python
+
+        def get_user(request):
+            return request.dbsession.query(User).one_or_none()
+
+        config.add_request_method(
+            callable=transaction_aware_reify(config, get_user),
+            name="user",
+            property=True,
+            reify=False)
+
     TODO: This could not be made a config directive, as having feature parity with add_request_method would force us to touch a lot of Pyramid internal APIs.
     """
 

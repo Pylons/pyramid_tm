@@ -180,6 +180,7 @@ def test_unresolvable(web_server, user, dbsession):
     # 3. second transaction success
     # 4. third transaction conflict
     # 5. third transaction conflict again
+    # -> third transaction out of replay attempts
     assert sample.hit_views == 5
 
     # When the last transaction runs out of attempts in ends
