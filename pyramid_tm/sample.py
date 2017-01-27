@@ -103,7 +103,7 @@ def exception_view(context, request):
     """This is were we end up if the transaction conflict cannot be resolved."""
     global exceptions_views
     exceptions_views += 1
-    print("Exceptinon fall through", context)  # TODO: Debug travis
+    print("Exception fall through", context)  # This is to debug Travis
     return HTTPInternalServerError("Ei mennyt niin kuin strömsöössä")
 
 

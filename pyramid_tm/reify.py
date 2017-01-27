@@ -26,6 +26,8 @@ def transaction_aware_reify(
 
     .. code-block:: python
 
+        from pyramid_tm.reify import transaction_aware_reify
+
         def get_user(request):
             return request.dbsession.query(User).one_or_none()
 
@@ -49,6 +51,10 @@ def transaction_aware_reify(
 
     def _reify(request):
         # Check if we have reified this result for this play
+
+        if not hasattr(request, "_transaction_properties"):
+            raise RuntimeError("There was an attempt to access transaction aware reified request property. However, for this request we never received transaction start event. This is usually a sign of incorrect tween stack order. Make sure pyramid_tm is the bottom-most tween before any tween accesses database. You can use ptweens command for this.")
+
         result = request._transaction_properties.get(name, _marker)
         if result is _marker:
             # Perform expensive transaction aware computation
