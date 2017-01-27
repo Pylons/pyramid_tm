@@ -1,6 +1,8 @@
 pyramid_tm
 ==========
 
+.. contents:: :local:
+
 .. _overview: 
 
 Overview
@@ -83,6 +85,16 @@ well as SQLAlchemy connections which are configured with
 ``zope.sqlalchemy.register(session)`` from the `zope.sqlalchemy
 <https://pypi.python.org/pypi/zope.sqlalchemy>`_ package.
 
+Using with Other Tweens
+-----------------------
+
+If any of your tweens uses database they must be placed under ``pyramid_tm``.
+
+Example:
+
+.. code-block:: python
+
+   config.add_tween("myapp.tweens.factory", under="pyramid_tm.tm_tween_factory")
 
 Custom Transaction Managers
 ---------------------------
