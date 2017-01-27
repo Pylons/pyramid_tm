@@ -32,6 +32,15 @@ tests_require = [
     'WebTest',
 ]
 
+integration_tests_require = [
+    'WebTest',
+    'requests',
+    'zope.sqlalchemy',
+    'psycopg2',
+    "py.test",
+]
+
+
 testing_extras = tests_require + ['nose', 'coverage']
 docs_extras = [
     'Sphinx',
@@ -71,7 +80,8 @@ setup(name='pyramid_tm',
       test_suite="pyramid_tm",
       entry_points='',
       extras_require = {
-          'testing':testing_extras,
-          'docs':docs_extras,
+          'testing': testing_extras,
+          'integration_testing': integration_tests_require,
+          'docs': docs_extras,
           },
       )

@@ -344,3 +344,4 @@ def includeme(config):
             config.registry.settings["tm.manager_hook"] = manager_hook
 
     config.action(None, ensure, order=10)
+    config.add_directive("add_transaction_aware_request_method", "pyramid_tm.reify.add_transaction_aware_request_method")

@@ -9,6 +9,9 @@ import pytest
 import requests
 
 from pyramid.config import Configurator
+from pyramid.registry import Registry
+from sqlalchemy import engine_from_config
+from transaction import TransactionManager
 from webtest.http import StopableWSGIServer
 
 from pyramid_tm import sample
@@ -16,20 +19,27 @@ from pyramid_tm import sample
 
 @pytest.fixture
 def settings():
-    return {
-        "sqlalchemy.url": "postgresql://localhost/pyramid_tm_functional"
-    }
+    return sample.CONFIG
 
 
 @pytest.fixture
-def app(settings):
-    config = Configurator(settings)
-    config.scan(sample)
-    return config.make_wsgi_app()
+def configurator(settings):
+    return Configurator(settings=settings)
 
 
 @pytest.fixture
-def dbsession(request, config):
+def registry(configurator):
+    return configurator.registry
+
+
+@pytest.fixture
+def app(configurator):
+    configurator.include(sample)
+    return configurator.make_wsgi_app()
+
+
+@pytest.fixture
+def dbsession(request, registry):
     """An SQLAlchemy session you can access from the unit test thread.
 
     Also resets database between subsequent test runs.
@@ -37,14 +47,19 @@ def dbsession(request, config):
 
     Base = sample.Base
 
-    connection = engine.connect()
+    engine = sample.create_engine(registry)
 
-    with transaction.manager:
+    unit_test_tm = TransactionManager()
+    dbsession = sample.create_session(registry, engine, unit_test_tm)
+
+    with dbsession.tm:
+        # Make sure we don't have leftover tables from the last run
         Base.metadata.drop_all(engine)
+        # Recreate db
         Base.metadata.create_all(engine)
 
     def teardown():
-        with transaction.manager:
+        with dbsession.tm:
             Base.metadata.drop_all(engine)
 
         dbsession.close()
@@ -55,13 +70,15 @@ def dbsession(request, config):
 
 
 @pytest.fixture
-def user(config):
-    """Make sure database is initialized and we have one and only one User there."""
-    return config.make_wsgi_app()
+def user(dbsession):
+    """Create our test user."""
+    with dbsession.tm:
+        u = sample.User()
+        dbsession.add(u)
 
 
-@pytest.fixture(scope="session")
-def web_server(request, app, dbsession, users):
+@pytest.fixture
+def web_server(request, app, dbsession):
     port = 7788
     server = StopableWSGIServer.create(app, host="localhost", port=port)
     server.wait()
@@ -102,3 +119,6 @@ def test_replay(web_server):
     t1.join()
     t2.join()
     t3.join()
+
+    results = [t1.result, t2.result, t3.result]
+    print(results)
