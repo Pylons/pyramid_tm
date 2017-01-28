@@ -14,6 +14,7 @@ from pyramid_tm.compat import reraise
 from pyramid_tm.compat import native_
 
 from pyramid_tm.events import TransactionAttempt
+from pyramid_tm.events import TransactionExceptionRender
 
 
 resolver = DottedNameResolver(None)
@@ -206,6 +207,9 @@ def tm_tween_factory(handler, registry):
 
 
 def render_exception(request, exc_info):
+
+    request.registry.notify(TransactionExceptionRender(request, exc_info))
+
     try:
         return request.invoke_exception_view(exc_info)
     except HTTPNotFound:

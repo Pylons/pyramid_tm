@@ -24,3 +24,12 @@ class TransactionAttempt(object):
         self.tx = tx
         self.attempt_no = attempt_no
         self.attempts = attempts
+
+
+
+class TransactionExceptionRender(object):
+    """Triggered before the exception view rendering starts."""
+
+    def __init__(self, request, exc_info):
+        self.request = request
+        self.exc_info = exc_info

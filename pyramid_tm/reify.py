@@ -61,6 +61,8 @@ def transaction_aware_reify(
         if result is _marker:
             # Perform expensive transaction aware computation
             result = request._transaction_properties[name] = callable(request)
+            #print("Updated ", request.path, request._transaction_properties, request.tm._txn)
+            #print("Got ", request.path, request._transaction_properties)
         return result
 
     # Register our transaction event handler
@@ -72,6 +74,7 @@ def transaction_aware_reify(
 
 @subscriber(TransactionAttempt)
 def on_transaction_attempt_reset_reify(e):
+    """Make sure we reset all reified properties if there is a replay."""
     reset_transaction_aware_properties(e.request)
 
 
@@ -82,6 +85,7 @@ def reset_transaction_aware_properties(request):
     """
     # This is the internal map where we are store reified results
     # over the request play
+    #print("Resetting ", getattr(request, "_transaction_properties", None))
     request._transaction_properties = {}
 
 
