@@ -4,7 +4,9 @@ import transaction
 from pyramid.settings import asbool
 from pyramid.tweens import EXCVIEW
 from pyramid.util import DottedNameResolver
+import warnings
 import zope.interface
+
 try:
     from pyramid_retry import IRetryableError
 except ImportError:  # pragma: no cover
@@ -49,6 +51,11 @@ def tm_tween_factory(handler, registry):
     commit_veto = maybe_resolve(commit_veto)
     activate_hook = maybe_resolve(activate_hook)
     annotate_user = asbool(settings.get('tm.annotate_user', True))
+
+    if 'tm.attempts' in settings:  # pragma: no cover
+        warnings.warn('pyramid_tm removed support for the "tm.attempts" '
+                      'setting in version 2.0. To re-enable retry support '
+                      'enable pyramid_retry in your application.')
 
     def tm_tween(request):
         environ = request.environ
