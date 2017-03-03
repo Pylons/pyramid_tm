@@ -259,63 +259,37 @@ package.
 Retrying
 --------
 
+``pyramid_tm`` ships with support for pyramid_retry_ which is an
+execution policy that will retry requests when they fail with exceptions
+marked as retryable. By default, retrying is turned off. In order to turn it
+on you must update your app's configuration:
+
+.. code-block:: python
+
+    from pyramid.config import Configurator
+
+    def main(global_config, **settings):
+        config = Configurator(settings=settings)
+        config.include('pyramid_retry')
+        config.include('pyramid_tm')
+
+Finally, ensure that your application's settings have ``retry.attempts``
+set to a value greater than ``1``.
+
 When the transaction manager calls the downstream handler, if the handler
-raises a :term:`retryable` exception, the transaction manager can be configured
-to attempt to call the downstream handler again with the same request, in
-effect "replaying" the request.
-
-By default, retrying is turned off.  To turn it on, use the
-``tm.attempts`` configuration setting.  By default this setting is
-``1``, meaning only one attempt will be tried, and no retry will happen even
-if a retryable error is raised by the handler.  But if the value, for
-example, is set to ``3``, the following set of events might happen.
-
-- The first attempt to call the handler raises a retryable exception;
-  a second attempt will be tried.
-
-- The second attempt raises a retryable exception, the transaction manager
-  will try the request again one more time.
-
-- The third attempt also raises a retryable exception, at this point all
-  attempts are used up and the "retryable" exception will be raised to its
-  caller.
-
-Or this might happen:
-
-- The first attempt to call the handler raises a retryable exception;
-  a second attempt will be tried.
-
-- The second attempt returns a response without raising any exception.
-
-- The response is returned to the caller.
+raises a :term:`retryable` exception, ``pyramid_tm`` will mark the exception
+as retryable by ``pyramid_retry``. The execution policy will detect a
+retryable error and create a new copy of the request with new state.
 
 Retryable exceptions include ``ZODB.POSException.ConflictError``, and
 certain exceptions raised by various data managers, such as
 ``psycopg2.extensions.TransactionRollbackError``, ``cx_Oracle.DatabaseError``
 where the exception's code is 8877.  Any exception which inherits from
-``transaction.interfaces.TransientError`` will be treated with retry
-behavior.
+``transaction.interfaces.TransientError`` will be marked as retryable.
 
-In order for the replay to work there are a few things to note about how
-your application is affected:
+Read more about retrying requests in the pyramid_retry_ documentation.
 
-- ``pyramid_tm`` must ensure that the ``request`` is seekable such that the
-  ``request.body_file`` can be rewound back to the start when the request is
-  replayed. This means a streaming request body will be read and buffered.
-
-- ``pyramid_tm`` must make a new ``request`` object for each attempt. This
-  means any data computed and stored on the ``request`` will be cleared
-  prior to the next attempt. However, anything stored in the ``environ`` is
-  shared across attempts.
-
-- As subsequent replay attempts are made using new ``request`` objects, any
-  tween wrapping ``pyramid_tm`` may not depend on values being set on the
-  ``request`` object below ``pyramid_tm``. The tween may not have a reference
-  to the ``request`` that was actually used to compute the response.
-
-  However, exception information (``request.exception`` and
-  ``request.exc_info``) **will** be propagated to the original ``request``
-  such that it may be inspected by wrapping tweens.
+.. _pyramid_retry: http://docs.pylonsproject.org/projects/pyramid-retry/en/latest/
 
 Explicit Tween Configuration
 ----------------------------
