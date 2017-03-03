@@ -119,6 +119,19 @@ while the ``pyramid_tm`` tween is active. If you try to access ``request.tm``
 outside of the tween or during a request in which ``pyramid_tm`` was disabled,
 ``request.tm`` will raise an ``AttributeError``.
 
+.. note::
+
+    It is recommended to use a custom transaction manager with
+    ``explicit=True``, as in the example above, instead of the threadlocal
+    ``transaction.manager`` to give greater control over the transaction's
+    lifecycle and to weed out potential bugs in your application. For example,
+    you may have some parts of your app that access the manager after it has
+    already been committed. This will open an implicit transaction that is
+    never committed, and will even hang around until a subsequent request
+    aborts the implicit transaction. Instead, if you set ``explicit=True``,
+    any code affecting the manager outside of the lifecycle of the transaction
+    will cause an error and will be noticed quickly.
+
 
 Adding an Activation Hook
 -------------------------
