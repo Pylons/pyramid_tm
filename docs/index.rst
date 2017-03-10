@@ -87,10 +87,10 @@ well as SQLAlchemy connections which are configured with
 Custom Transaction Managers
 ---------------------------
 
-By default ``pyramid_tm`` will use the default transaction manager which uses
-thread locals to associate one transaction manager per thread. If you wish
-to override this and provide your own transaction manager you can create your
-own manager hook that will return the manager it should use.
+By default ``pyramid_tm`` will use the threadlocal ``transaction.manager``
+to associate one transaction manager per thread. If you wish to override this
+and provide your own transaction manager you can create your own manager hook
+that will return the manager it should use.
 
 .. code-block:: python
    :linenos:
@@ -112,6 +112,11 @@ To enable this hook, add it as the ``tm.manager_hook`` setting in your app.
        config = Configurator(settings=settings)
        config.include('pyramid_tm')
        # ...
+
+This specific example, using an explicit mode non-threadlocal manager, is
+highly recommended and is shipped as :func:`pyramid_tm.explicit_manager`.
+Simply set ``tm.manager_hook = pyramid_tm.explicit_manager`` in your settings
+to enable it.
 
 The current transaction manager being used for any particular request can
 always be accessed on the request as ``request.tm`` so long as it is accessed

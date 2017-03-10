@@ -132,6 +132,18 @@ def tm_tween_factory(handler, registry):
     return tm_tween
 
 
+def explicit_manager(request):
+    """
+    Create a new ``transaction.TransactionManager`` in explicit mode.
+
+    This is recommended transaction manager and will help to weed out errors
+    caused by code that tweaks the transaction before it has begun or after
+    it has ended.
+
+    """
+    return transaction.TransactionManager(explicit=True)
+
+
 def maybe_tag_retryable(request, exc_info):
     if request.tm._retryable(*exc_info[:-1]):
         exc = exc_info[1]

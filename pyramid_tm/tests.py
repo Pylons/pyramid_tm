@@ -416,7 +416,7 @@ def skip_if_missing(module):  # pragma: no cover
 
 class TestIntegration(unittest.TestCase):
     def setUp(self):
-        self.config = testing.setUp()
+        self.config = testing.setUp(autocommit=False)
         self.config.include('pyramid_tm')
 
     def tearDown(self):
@@ -486,6 +486,48 @@ class TestIntegration(unittest.TestCase):
         resp = app.get('/')
         self.assertEqual(resp.body, b'failure')
         self.assertEqual(dm.action, 'abort')
+
+    def test_explicit_manager_fails_before_tm(self):
+        from transaction.interfaces import NoTransaction
+        config = self.config
+        config.add_settings({'tm.manager_hook': 'pyramid_tm.explicit_manager'})
+        config.add_tween('pyramid_tm.tests.dummy_tween_factory',
+                         over='pyramid_tm.tm_tween_factory')
+        dm = DummyDataManager()
+        def dummy_handler(handler, request):
+            dm.bind(request.tm)
+        config.registry['dummy_handler'] = dummy_handler
+        config.add_view(lambda r: r.response)
+        app = self._makeApp()
+        self.assertRaises(NoTransaction, app.get, '/')
+
+    def test_explicit_manager_fails_after_tm(self):
+        from transaction.interfaces import NoTransaction
+        config = self.config
+        config.add_settings({'tm.manager_hook': 'pyramid_tm.explicit_manager'})
+        config.add_tween('pyramid_tm.tests.dummy_tween_factory',
+                         over='pyramid_tm.tm_tween_factory')
+        dm = DummyDataManager()
+        def dummy_handler(handler, request):
+            handler(request)
+            dm.bind(request.tm)
+        config.registry['dummy_handler'] = dummy_handler
+        config.add_view(lambda r: r.response)
+        app = self._makeApp()
+        self.assertRaises(NoTransaction, app.get, '/')
+
+    def test_explicit_manager_works_in_view(self):
+        config = self.config
+        dm = DummyDataManager()
+        def view(request):
+            dm.bind(request.tm)
+            return 'ok'
+        config.add_view(view, renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'ok')
+        self.assertEqual(dm.action, 'commit')
+
 
 class Dummy(object):
     def __init__(self, **kwargs):
@@ -590,3 +632,9 @@ class DummyConfig(object):
 
     def action(self, x, fun, order=None):
         self.actions.append((x, fun, order))
+
+def dummy_tween_factory(handler, registry):
+    def dummy_tween(request):
+        dummy_handler = registry['dummy_handler']
+        return dummy_handler(handler, request)
+    return dummy_tween
