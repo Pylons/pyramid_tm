@@ -1,6 +1,36 @@
 Changes
 -------
 
+unreleased
+^^^^^^^^^^
+
+Major Features
+++++++++++++++
+
+- The ``pyramid_tm`` tween has been moved **over** the ``EXCVIEW`` tween.
+  This means the transaction is open during exception view execution.
+  See https://github.com/Pylons/pyramid_tm/pull/55
+
+Backward Incompatibilities
+++++++++++++++++++++++++++
+
+- The ``tm.attmpts`` setting has been removed and retry support has been moved
+  into a new package named ``pyramid_retry``. If you want retry support then
+  please look at that library for more information about installing and
+  enabling it.
+  See https://github.com/Pylons/pyramid_tm/pull/55
+
+- The ``pyramid_tm`` tween has been moved **over** the ``EXCVIEW`` tween.
+  If you have any hacks in your application that are opening a new transaction
+  inside your exception views then it's likely you will want to remove them
+  or re-evaluate when upgrading.
+  See https://github.com/Pylons/pyramid_tm/pull/55
+
+Minor Features
+++++++++++++++
+
+- Support for Python 3.6.
+
 1.1.1 (2016-11-21)
 ^^^^^^^^^^^^^^^^^^
 
