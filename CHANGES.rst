@@ -1,8 +1,8 @@
 Changes
 -------
 
-unreleased
-^^^^^^^^^^
+2.0 (unreleased)
+^^^^^^^^^^^^^^^^
 
 Major Features
 ++++++++++++++
