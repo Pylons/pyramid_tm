@@ -26,6 +26,8 @@ Backward Incompatibilities
   or re-evaluate when upgrading.
   See https://github.com/Pylons/pyramid_tm/pull/55
 
+- Drop support for Pyramid < 1.5.
+
 Minor Features
 ~~~~~~~~~~~~~~
 
