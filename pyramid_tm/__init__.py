@@ -2,13 +2,21 @@ import sys
 import transaction
 
 from pyramid.settings import asbool
-from pyramid.util import DottedNameResolver
 from pyramid.tweens import EXCVIEW
+from pyramid.util import DottedNameResolver
+import warnings
+import zope.interface
+
+try:
+    from pyramid_retry import IRetryableError
+except ImportError:  # pragma: no cover
+    IRetryableError = zope.interface.Interface
 
 from .compat import reraise
-from .compat import binary_type, text_type
+from .compat import text_
 
 resolver = DottedNameResolver(None)
+
 
 def default_commit_veto(request, response):
     """
@@ -27,100 +35,108 @@ def default_commit_veto(request, response):
         return xtm != 'commit'
     return response.status.startswith(('4', '5'))
 
-def text_(s):
-    if isinstance(s, binary_type):
-        try:
-            return s.decode('utf-8')
-        except UnicodeDecodeError:
-            return s.decode('latin-1')
-    return text_type(s)
 
-class AbortResponse(Exception):
+class AbortWithResponse(Exception):
+    """ Abort the transaction but return a pre-baked response."""
     def __init__(self, response):
         self.response = response
 
+
 def tm_tween_factory(handler, registry):
-    old_commit_veto = registry.settings.get('pyramid_tm.commit_veto', None)
-    commit_veto = registry.settings.get('tm.commit_veto', old_commit_veto)
-    activate = registry.settings.get('tm.activate_hook')
-    attempts = int(registry.settings.get('tm.attempts', 1))
-    commit_veto = resolver.maybe_resolve(commit_veto) if commit_veto else None
-    activate = resolver.maybe_resolve(activate) if activate else None
-    annotate_user = asbool(registry.settings.get("tm.annotate_user", True))
-    assert attempts > 0
+    settings = registry.settings
+    maybe_resolve = lambda val: resolver.maybe_resolve(val) if val else None
+    old_commit_veto = settings.get('pyramid_tm.commit_veto', None)
+    commit_veto = settings.get('tm.commit_veto', old_commit_veto)
+    activate_hook = settings.get('tm.activate_hook')
+    commit_veto = maybe_resolve(commit_veto)
+    activate_hook = maybe_resolve(activate_hook)
+    annotate_user = asbool(settings.get('tm.annotate_user', True))
+
+    if 'tm.attempts' in settings:  # pragma: no cover
+        warnings.warn('pyramid_tm removed support for the "tm.attempts" '
+                      'setting in version 2.0. To re-enable retry support '
+                      'enable pyramid_retry in your application.')
 
     def tm_tween(request):
+        environ = request.environ
         if (
             # don't handle txn mgmt if repoze.tm is in the WSGI pipeline
-            'repoze.tm.active' in request.environ or
+            'repoze.tm.active' in environ or
             # pyramid_tm should only be active once
-            'tm.active' in request.environ or
+            'tm.active' in environ or
             # check activation hooks
-            activate is not None and not activate(request)
+            activate_hook is not None and not activate_hook(request)
         ):
             return handler(request)
 
-        # Set a flag in the environment to enable the `request.tm` property.
-        request.environ['tm.active'] = True
+        # grab a reference to the manager
+        manager = request.tm
 
-        manager = getattr(request, 'tm', None)
-        if manager is None: # pragma: no cover (pyramid < 1.4)
-            manager = create_tm(request)
-            request.tm = manager
-        number = attempts
-        if annotate_user:
-            if hasattr(request, 'unauthenticated_userid'):
+        # mark the environ as being managed by pyramid_tm
+        environ['tm.active'] = True
+        environ['tm.manager'] = manager
+
+        try:
+            t = manager.begin()
+
+            # do not address the authentication policy until we are within
+            # the transaction boundaries
+            if annotate_user:
                 userid = request.unauthenticated_userid
-            else: # pragma no cover (for pyramid < 1.5)
-                from pyramid.security import unauthenticated_userid
-                userid = unauthenticated_userid(request)
-
-            if userid:
-                userid = text_(userid)
-        else:
-            userid = None
-
-        while number:
-            number -= 1
-            try:
-                manager.begin()
-                # make_body_seekable will copy wsgi.input if necessary,
-                # otherwise it will rewind the copy to position zero
-                if attempts != 1:
-                    request.make_body_seekable()
-                t = manager.get()
                 if userid:
-                    t.user = userid
-                try:
-                    t.note(text_(request.path_info))
-                except UnicodeDecodeError:
-                    t.note(text_("Unable to decode path as unicode"))
-                response = handler(request)
-                if manager.isDoomed():
-                    raise AbortResponse(response)
-                if commit_veto is not None:
-                    veto = commit_veto(request, response)
-                    if veto:
-                        raise AbortResponse(response)
-                manager.commit()
-                del request.environ['tm.active']
-                return response
-            except AbortResponse as e:
+                    t.user = text_(userid)
+            try:
+                t.note(text_(request.path_info))
+            except UnicodeDecodeError:
+                t.note(text_("Unable to decode path as unicode"))
+
+            response = handler(request)
+            if manager.isDoomed():
+                raise AbortWithResponse(response)
+
+            # check for a squashed exception and handle it
+            # this would happen if an exception view was invoked and
+            # rendered an error response
+            exc_info = getattr(request, 'exc_info', None)
+            if exc_info is not None:
+                maybe_tag_retryable(request, exc_info)
+                raise AbortWithResponse(response)
+
+            if commit_veto is not None:
+                veto = commit_veto(request, response)
+                if veto:
+                    raise AbortWithResponse(response)
+            manager.commit()
+            return response
+
+        except AbortWithResponse as e:
+            manager.abort()
+            return e.response
+
+        except Exception:
+            exc_info = sys.exc_info()
+            try:
+                maybe_tag_retryable(request, exc_info)
+                reraise(*exc_info)
+
+            finally:
                 manager.abort()
-                del request.environ['tm.active']
-                return e.response
-            except:
-                exc_info = sys.exc_info()
-                try:
-                    retryable = manager._retryable(*exc_info[:-1])
-                    manager.abort()
-                    if (number <= 0) or (not retryable):
-                        del request.environ['tm.active']
-                        reraise(*exc_info)
-                finally:
-                    del exc_info # avoid leak
+
+                del exc_info # avoid leak
+
+        # cleanup any changes we made to the request
+        finally:
+            del environ['tm.active']
+            del environ['tm.manager']
 
     return tm_tween
+
+
+def maybe_tag_retryable(request, exc_info):
+    if request.tm._retryable(*exc_info[:-1]):
+        exc = exc_info[1]
+        if exc:
+            zope.interface.alsoProvides(exc, IRetryableError)
 
 
 def create_tm(request):
@@ -134,41 +150,35 @@ def create_tm(request):
 
 def includeme(config):
     """
-    Set up am implicit 'tween' to do transaction management using the
-    ``transaction`` package.  The tween will be slotted between the main
-    Pyramid app and the Pyramid exception view handler.
+    Set up an implicit 'tween' to do transaction management using the
+    ``transaction`` package.  The tween will be slotted between the Pyramid
+    request ingress and the Pyramid exception view handler.
 
     For every request it handles, the tween will begin a transaction by
-    calling ``transaction.begin()``, and will then call the downstream
+    calling ``request.tm.begin()``, and will then call the downstream
     handler (usually the main Pyramid application request handler) to obtain
     a response.  When attempting to call the downstream handler:
 
     - If an exception is raised by downstream handler while attempting to
       obtain a response, the transaction will be rolled back
-      (``transaction.abort()`` will be called).
+      (``request.tm.abort()`` will be called).
 
     - If no exception is raised by the downstream handler, but the
-      transaction is doomed (``transaction.doom()`` has been called), the
+      transaction is doomed (``request.tm.doom()`` has been called), the
       transaction will be rolled back.
 
     - If the deployment configuration specifies a ``tm.commit_veto`` setting,
       and the transaction management tween receives a response from the
       downstream handler, the commit veto hook will be called.  If it returns
-      True, the transaction will be rolled back.  If it returns False, the
+      True, the transaction will be rolled back.  If it returns ``False``, the
       transaction will be committed.
 
-    - If none of the above conditions are True, the transaction will be
-      committed (via ``transaction.commit()``).
+    - If none of the above conditions are true, the transaction will be
+      committed (via ``request.tm.commit()``).
+
     """
-    # pyramid 1.4+
-    if hasattr(config, 'add_request_method'):
-        config.add_request_method(
-            'pyramid_tm.create_tm', name='tm', reify=True)
-    # pyramid 1.3
-    elif hasattr(config, 'set_request_property'): # pragma: no cover
-        config.set_request_property(
-            'pyramid_tm.create_tm', name='tm', reify=True)
-    config.add_tween('pyramid_tm.tm_tween_factory', under=EXCVIEW)
+    config.add_tween('pyramid_tm.tm_tween_factory', over=EXCVIEW)
+    config.add_request_method(create_tm, name='tm', reify=True)
 
     def ensure():
         manager_hook = config.registry.settings.get("tm.manager_hook")

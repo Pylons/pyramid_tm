@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import functools
 import unittest
 import transaction
 from transaction import TransactionManager
@@ -60,8 +61,9 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.txn = DummyTransaction()
         self.request = DummyRequest()
         self.response = DummyResponse()
-        self.registry = DummyRegistry()
-        self.config = testing.setUp()
+        self.config = testing.setUp(request=self.request)
+        self.registry = self.config.registry
+        self.settings = self.registry.settings
 
     def tearDown(self):
         testing.tearDown()
@@ -96,16 +98,16 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertFalse(self.txn.began)
 
     def test_should_activate_true(self):
-        registry = DummyRegistry(
+        self.settings.update(
             {'tm.activate_hook':'pyramid_tm.tests.activate_true'})
-        result = self._callFUT(registry=registry)
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
 
     def test_should_activate_false(self):
-        registry = DummyRegistry(
+        self.settings.update(
             {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
-        result = self._callFUT(registry=registry)
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
 
@@ -116,26 +118,6 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.began)
         self.assertTrue(self.txn.aborted)
         self.assertFalse(self.txn.committed)
-
-    def test_handler_retryable_exception(self):
-        from transaction.interfaces import TransientError
-        class Conflict(TransientError):
-            pass
-        count = []
-        response = DummyResponse()
-        self.registry.settings['tm.attempts'] = '3'
-        def handler(request, count=count):
-            count.append(True)
-            if len(count) == 3:
-                return response
-            raise Conflict
-        txn = DummyTransaction(retryable=True)
-        result = self._callFUT(handler=handler, txn=txn)
-        self.assertTrue(txn.began)
-        self.assertEqual(txn.committed, 1)
-        self.assertEqual(txn.aborted, 2)
-        self.assertEqual(self.request.made_seekable, 3)
-        self.assertEqual(result, response)
 
     def test_handler_retryable_exception_defaults_to_1(self):
         from transaction.interfaces import TransientError
@@ -179,8 +161,8 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_disables_user_annotation(self):
         self.config.testing_securitypolicy(userid="nope")
-        registry = DummyRegistry({"tm.annotate_user": 'false'})
-        result = self._callFUT(registry=registry)
+        self.settings['tm.annotate_user'] = 'false'
+        result = self._callFUT()
         self.assertEqual(self.txn.user, None)
 
     def test_handler_notes(self):
@@ -244,14 +226,14 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertEqual(result, ['active'])
 
     def test_active_flag_not_set_activate_false(self):
-        registry = DummyRegistry(
+        self.settings.update(
             {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
         result = []
         def handler(request):
             if 'tm.active' not in request.environ:
                 result.append('not active')
             return self.response
-        self._callFUT(handler=handler, registry=registry)
+        self._callFUT(handler=handler)
         self.assertEqual(result, ['not active'])
 
     def test_active_flag_unset_on_egress(self):
@@ -301,26 +283,24 @@ class Test_tm_tween_factory(unittest.TestCase):
         response.status = '500 Bad Request'
         def handler(request):
             return response
-        registry = DummyRegistry({'tm.commit_veto':None})
-        result = self._callFUT(handler=handler, registry=registry)
+        self.settings.update({'tm.commit_veto':None})
+        result = self._callFUT(handler=handler)
         self.assertEqual(result, response)
         self.assertTrue(self.txn.began)
         self.assertFalse(self.txn.aborted)
         self.assertTrue(self.txn.committed)
 
     def test_commit_veto_true(self):
-        registry = DummyRegistry(
-            {'tm.commit_veto':'pyramid_tm.tests.veto_true'})
-        result = self._callFUT(registry=registry)
+        self.settings.update({'tm.commit_veto':'pyramid_tm.tests.veto_true'})
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
         self.assertTrue(self.txn.aborted)
         self.assertFalse(self.txn.committed)
 
     def test_commit_veto_false(self):
-        registry = DummyRegistry(
-            {'tm.commit_veto':'pyramid_tm.tests.veto_false'})
-        result = self._callFUT(registry=registry)
+        self.settings.update({'tm.commit_veto':'pyramid_tm.tests.veto_false'})
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
         self.assertFalse(self.txn.aborted)
@@ -334,9 +314,9 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.committed)
 
     def test_commit_veto_alias(self):
-        registry = DummyRegistry(
+        self.settings.update(
             {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_true'})
-        result = self._callFUT(registry=registry)
+        result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
         self.assertTrue(self.txn.aborted)
@@ -385,13 +365,13 @@ create_manager = None
 class Test_includeme(unittest.TestCase):
     def test_it(self):
         from pyramid.tweens import EXCVIEW
-        from pyramid_tm import includeme
+        from pyramid_tm import includeme, create_tm
         config = DummyConfig()
         includeme(config)
         self.assertEqual(config.tweens,
-                         [('pyramid_tm.tm_tween_factory', EXCVIEW, None)])
+                         [('pyramid_tm.tm_tween_factory', None, EXCVIEW)])
         self.assertEqual(config.request_methods,
-                         [('pyramid_tm.create_tm', 'tm', True)])
+                         [(create_tm, 'tm', True)])
         self.assertEqual(len(config.actions), 1)
         self.assertEqual(config.actions[0][0], None)
         self.assertEqual(config.actions[0][2], 10)
@@ -421,10 +401,23 @@ class Test_includeme(unittest.TestCase):
         finally:
             testing.tearDown()
 
+def skip_if_missing(module):  # pragma: no cover
+    def wrapper(fn):
+        try:
+            __import__(module)
+        except ImportError:
+            return
+
+        @functools.wraps(fn)
+        def wrapped(*args, **kwargs):
+            return fn(*args, **kwargs)
+        return wrapped
+    return wrapper
+
 class TestIntegration(unittest.TestCase):
     def setUp(self):
-        self.config = config = testing.setUp()
-        config.include('pyramid_tm')
+        self.config = testing.setUp()
+        self.config.include('pyramid_tm')
 
     def tearDown(self):
         testing.tearDown()
@@ -444,6 +437,29 @@ class TestIntegration(unittest.TestCase):
         resp = app.get('/')
         self.assertEqual(resp.body, b'ok')
         self.assertEqual(dm.action, 'commit')
+
+    @skip_if_missing('pyramid_retry')
+    def test_transient_error_is_retried(self):
+        from transaction.interfaces import TransientError
+        config = self.config
+        config.add_settings({'retry.attempts': 2})
+        config.include('pyramid_retry')
+        class Conflict(TransientError):
+            pass
+        calls = []
+        def view(request):
+            dm = DummyDataManager()
+            dm.bind(request.tm)
+            if len(calls) < 1:
+                calls.append('fail')
+                raise Conflict
+            calls.append('ok')
+            return 'ok'
+        config.add_view(view, renderer='string')
+        app = self._makeApp()
+        result = app.get('/')
+        self.assertEqual(calls, ['fail', 'ok'])
+        self.assertEqual(result.body, b'ok')
 
     def test_unhandled_error_aborts(self):
         config = self.config
@@ -475,12 +491,6 @@ class Dummy(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
-class DummyRegistry(object):
-    def __init__(self, settings=None):
-        if settings is None:
-            settings = {}
-        self.settings = settings
-
 class DummyTransaction(TransactionManager):
     began = False
     committed = False
@@ -500,7 +510,7 @@ class DummyTransaction(TransactionManager):
         if self.active:
             return self.retryable
 
-    def get(self):
+    def get(self): # pragma: no cover
         return self
 
     def isDoomed(self):
@@ -551,12 +561,11 @@ class DummyDataManager(object):
 
 class DummyRequest(testing.DummyRequest):
     def __init__(self, *args, **kwargs):
-        self.made_seekable = 0
         self.tm = TransactionManager()
         super(DummyRequest, self).__init__(self, *args, **kwargs)
 
-    def make_body_seekable(self):
-        self.made_seekable += 1
+    def invoke_subrequest(self, request, use_tweens): # pragma: no cover
+        pass
 
 class DummyResponse(object):
     def __init__(self, status='200 OK', headers=None):
@@ -571,6 +580,7 @@ class DummyConfig(object):
         self.tweens = []
         self.request_methods = []
         self.actions = []
+        self.views = []
 
     def add_tween(self, x, under=None, over=None):
         self.tweens.append((x, under, over))

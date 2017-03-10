@@ -12,4 +12,3 @@
 .. autofunction:: tm_tween_factory
 
 .. autofunction:: create_tm
-
