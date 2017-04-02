@@ -364,12 +364,15 @@ create_manager = None
 
 class Test_includeme(unittest.TestCase):
     def test_it(self):
-        from pyramid.tweens import EXCVIEW
+        from pyramid.tweens import INGRESS, EXCVIEW
         from pyramid_tm import includeme, create_tm
         config = DummyConfig()
         includeme(config)
-        self.assertEqual(config.tweens,
-                         [('pyramid_tm.tm_tween_factory', None, EXCVIEW)])
+        self.assertEqual(config.tweens, [(
+            'pyramid_tm.tm_tween_factory',
+            ['pyramid.tweens.response_callbacks_tween_factory', INGRESS],
+            EXCVIEW,
+        )])
         self.assertEqual(config.request_methods,
                          [(create_tm, 'tm', True)])
         self.assertEqual(len(config.actions), 1)
