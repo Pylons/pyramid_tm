@@ -2,7 +2,7 @@ import sys
 import transaction
 
 from pyramid.settings import asbool
-from pyramid.tweens import EXCVIEW
+import pyramid.tweens
 from pyramid.util import DottedNameResolver
 import warnings
 import zope.interface
@@ -189,7 +189,16 @@ def includeme(config):
       committed (via ``request.tm.commit()``).
 
     """
-    config.add_tween('pyramid_tm.tm_tween_factory', over=EXCVIEW)
+    config.add_tween(
+        'pyramid_tm.tm_tween_factory',
+        under=[
+            # pyramid.tweens.RESPONSE_CALLBACKS is explicitly named here
+            # to keep working on versions of Pyramid < 1.9
+            'pyramid.tweens.response_callbacks_tween_factory',
+            pyramid.tweens.INGRESS,
+        ],
+        over=pyramid.tweens.EXCVIEW,
+    )
     config.add_request_method(create_tm, name='tm', reify=True)
 
     def ensure():
