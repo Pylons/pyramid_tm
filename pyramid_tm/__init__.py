@@ -1,9 +1,9 @@
 import sys
-import transaction
-
+from pyramid.exceptions import ConfigurationError
 from pyramid.settings import asbool
 from pyramid.tweens import EXCVIEW
 from pyramid.util import DottedNameResolver
+import transaction
 import warnings
 import zope.interface
 
@@ -160,6 +160,42 @@ def create_tm(request):
         return transaction.manager
 
 
+def is_tm_active(request):
+    """
+    Return ``True`` if the ``request`` is currently being managed by
+    the pyramid_tm tween. If ``False`` then it may be necessary to manage
+    transactions yourself.
+    """
+    return request.environ.get('tm.active', False)
+
+
+class TMActivePredicate(object):
+    """
+    A :term:`view predicate` registered as ``tm_active``. Can be used
+    to determine if an exception view should execute based on whether it's
+    the last retry attempt before aborting the request.
+
+    .. seealso:: See :func:`pyramid_tm.is_tm_active`.
+
+    """
+    def __init__(self, val, config):
+        if not isinstance(val, bool):
+            raise ConfigurationError(
+                'The "tm_active" view predicate value must be '
+                'True or False.',
+            )
+        self.val = val
+
+    def text(self):
+        return 'tm_active = %s' % (self.val,)
+
+    phash = text
+
+    def __call__(self, context, request):
+        is_active = is_tm_active(request)
+        return ((self.val and is_active) or (not self.val and not is_active))
+
+
 def includeme(config):
     """
     Set up an implicit 'tween' to do transaction management using the
@@ -191,6 +227,7 @@ def includeme(config):
     """
     config.add_tween('pyramid_tm.tm_tween_factory', over=EXCVIEW)
     config.add_request_method(create_tm, name='tm', reify=True)
+    config.add_view_predicate('tm_active', TMActivePredicate)
 
     def ensure():
         manager_hook = config.registry.settings.get("tm.manager_hook")

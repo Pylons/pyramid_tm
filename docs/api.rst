@@ -7,6 +7,8 @@
 
 .. autofunction:: includeme
 
+.. autofunction:: is_tm_active
+
 .. autofunction:: default_commit_veto
 
 .. autofunction:: tm_tween_factory

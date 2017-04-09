@@ -365,13 +365,15 @@ create_manager = None
 class Test_includeme(unittest.TestCase):
     def test_it(self):
         from pyramid.tweens import EXCVIEW
-        from pyramid_tm import includeme, create_tm
+        from pyramid_tm import includeme, create_tm, TMActivePredicate
         config = DummyConfig()
         includeme(config)
         self.assertEqual(config.tweens,
                          [('pyramid_tm.tm_tween_factory', None, EXCVIEW)])
         self.assertEqual(config.request_methods,
                          [(create_tm, 'tm', True)])
+        self.assertEqual(config.view_predicates,
+                         [('tm_active', TMActivePredicate)])
         self.assertEqual(len(config.actions), 1)
         self.assertEqual(config.actions[0][0], None)
         self.assertEqual(config.actions[0][2], 10)
@@ -528,6 +530,46 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(resp.body, b'ok')
         self.assertEqual(dm.action, 'commit')
 
+    def test_tm_active_predicate_is_True(self):
+        config = self.config
+        dm = DummyDataManager()
+        def true_view(request):
+            dm.bind(request.tm)
+            return 'ok'
+        def false_view(request):  # pragma: no cover
+            raise RuntimeError
+        config.add_view(true_view, tm_active=True, renderer='string')
+        config.add_view(false_view, tm_active=False, renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'ok')
+        self.assertEqual(dm.action, 'commit')
+
+    def test_tm_active_predicate_is_False(self):
+        config = self.config
+        config.add_settings({'tm.activate_hook': activate_false})
+        def true_view(request):  # pragma: no cover
+            raise RuntimeError
+        def false_view(request):
+            return 'ok'
+        config.add_view(true_view, tm_active=True, renderer='string')
+        config.add_view(false_view, tm_active=False, renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'ok')
+
+    def test_tm_active_predicate_is_bool(self):
+        from pyramid.exceptions import ConfigurationError
+        config = self.config
+        try:
+            view = lambda r: 'ok'
+            config.add_view(view, tm_active='yes', renderer='string')
+            config.commit()
+        except ConfigurationError:
+            pass
+        else:  # pragma: no cover
+            raise AssertionError
+
 
 class Dummy(object):
     def __init__(self, **kwargs):
@@ -621,14 +663,17 @@ class DummyConfig(object):
         self.registry = Dummy(settings={})
         self.tweens = []
         self.request_methods = []
+        self.view_predicates = []
         self.actions = []
-        self.views = []
 
     def add_tween(self, x, under=None, over=None):
         self.tweens.append((x, under, over))
 
     def add_request_method(self, x, name=None, reify=None):
         self.request_methods.append((x, name, reify))
+
+    def add_view_predicate(self, name, obj):
+        self.view_predicates.append((name, obj))
 
     def action(self, x, fun, order=None):
         self.actions.append((x, fun, order))
