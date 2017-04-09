@@ -11,6 +11,10 @@ Major Features
   This means the transaction is open during exception view execution.
   See https://github.com/Pylons/pyramid_tm/pull/55
 
+- Added a ``pyramid_tm.is_tm_active`` and a ``tm_active`` view predicate
+  which may be useful in exception views that require access to the database.
+  See https://github.com/Pylons/pyramid_tm/pull/60
+
 Backward Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
