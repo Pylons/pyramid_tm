@@ -14,7 +14,7 @@ Major Features
 Backward Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- The ``tm.attmpts`` setting has been removed and retry support has been moved
+- The ``tm.attempts`` setting has been removed and retry support has been moved
   into a new package named ``pyramid_retry``. If you want retry support then
   please look at that library for more information about installing and
   enabling it.
