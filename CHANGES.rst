@@ -1,7 +1,7 @@
 Changes
 -------
 
-2.0 (unreleased)
+2.0 (2017-04-11)
 ^^^^^^^^^^^^^^^^
 
 Major Features
@@ -21,8 +21,7 @@ Backward Incompatibilities
 - The ``tm.attempts`` setting has been removed and retry support has been moved
   into a new package named ``pyramid_retry``. If you want retry support then
   please look at that library for more information about installing and
-  enabling it.
-  See https://github.com/Pylons/pyramid_tm/pull/55
+  enabling it. See https://github.com/Pylons/pyramid_tm/pull/55
 
 - The ``pyramid_tm`` tween has been moved **over** the ``EXCVIEW`` tween.
   If you have any hacks in your application that are opening a new transaction
