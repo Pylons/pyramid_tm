@@ -55,7 +55,7 @@ def tm_tween_factory(handler, registry):
     if 'tm.attempts' in settings:  # pragma: no cover
         warnings.warn('pyramid_tm removed support for the "tm.attempts" '
                       'setting in version 2.0. To re-enable retry support '
-                      'enable pyramid_retry in your application.')
+                      'add pyramid_retry to your application.')
 
     def tm_tween(request):
         environ = request.environ
