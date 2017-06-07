@@ -158,7 +158,7 @@ The transaction created and completed by ``pyramid_tm`` should be used for
 operations directly related to processing the request. Very often it is
 desirable to perform operations on the database and other backends in a failure
 scenario. This should be done using a separate transaction / connection,
-possibly in autocomplete mode. **Do not** use ``request.tm`` and
+possibly in autocommit mode. **Do not** use ``request.tm`` and
 ``request.dbsession`` and such for these cases as the work added to that
 transaction is expected to be aborted upon any failures.
 
