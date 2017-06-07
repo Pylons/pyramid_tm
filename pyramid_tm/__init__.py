@@ -209,6 +209,13 @@ def is_tm_active(request):
     Return ``True`` if the ``request`` is currently being managed by
     the pyramid_tm tween. If ``False`` then it may be necessary to manage
     transactions yourself.
+
+    .. note::
+
+       This does **not** indicate that there is a current transaction. For
+       example, ``request.tm.get()`` may raise a ``NoTransaction`` error even
+       though ``is_tm_active`` returns ``True``. This would be caused by user
+       code that manually completed a transaction and did not begin a new one.
     """
     return request.environ.get('tm.active', False)
 

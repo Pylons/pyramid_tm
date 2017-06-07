@@ -68,8 +68,8 @@ are tested:
      application, return a result that evaluates to ``True``? if so,
      ``request.tm.abort()``.
 
-If none of these checks calls ``transaction.abort()`` then the transaction is
-instead committed using ``transaction.commit()``.
+If none of these checks calls ``request.tm.abort()`` then the transaction is
+instead committed using ``request.tm.commit()``.
 
 By itself, this :term:`transaction` machinery doesn't do much.  It is up to
 third-party code to *join* the active transaction to benefit.  See
@@ -83,6 +83,119 @@ well as SQLAlchemy connections which are configured with
 ``zope.sqlalchemy.register(session)`` from the `zope.sqlalchemy
 <https://pypi.python.org/pypi/zope.sqlalchemy>`_ package.
 
+Savepoints
+----------
+
+When using sessions / data managers joined to the transaction,
+it's important to synchronize changes across those managers. This means that
+it's usually incorrect to use your backend's session lifecycle functions
+directly such as ``sqlalchemy.orm.Session.begin_nested``. Instead, synchronize
+a savepoint across all joined data managers via
+``sp = request.tm.savepoint()``. The savepoint can be rolled back via
+``sp.rollback()``. For example:
+
+.. code-block:: python
+
+    def my_view(request):
+        sp = request.tm.savepoint()
+        try:
+            page = WikiPage()
+            page.id = 5  # maybe the id 5 violates a unique constraint
+            request.dbsession.add(page)
+            request.dbsession.flush()
+        except sqlalchemy.exc.IntegrityError:
+            # page already exists!
+            sp.rollback()
+        # continue with or without the data added in the try-clause
+        ...
+
+.. note::
+
+    Not every data manager supports savepoints and as such some changes
+    may not be able to be rolled back.
+
+.. _error_handling:
+
+Error Handling
+--------------
+
+``pyramid_tm`` is positioned **OVER** the ``EXCVIEW`` tween. The implication
+of this is that the transaction may still be open and alive during the
+execution of your exception views. **This is not guaranteed**. If you write
+an exception view that expects an open transaction then you should declare
+your intent using the ``tm_active=True`` view predicate otherwise it may be
+executed later in the pipeline after the transaction has already been
+completed. For example:
+
+.. code-block:: python
+
+    from pyramid.view import exception_view_config
+
+    log = __import__('logging').getLogger(__name__)
+
+    @exception_view_config(Exception, tm_active=True)
+    def transactional_error_view(exc, request):
+        if request.authenticated_userid is not None:
+            log.exception('authenticated user caused an exception')
+        else:
+            log.exception('unknown user caused an exception')
+        response = request.response
+        response.status_code = 500
+        return response
+
+    @exception_view_config(Exception)
+    def default_error_view(exc, request):
+        log.exception('unknown user caused an exception')
+        response = request.response
+        response.status_code = 500
+        return response
+
+In the above example, ``transactional_error_view`` will be invoked only
+when an exception occurs during the ``pyramid_tm`` lifecycle. Otherwise,
+``default_error_view`` will be invoked as a fallback.
+
+The transaction created and completed by ``pyramid_tm`` should be used for
+operations directly related to processing the request. Very often it is
+desirable to perform operations on the database and other backends in a failure
+scenario. This should be done using a separate transaction / connection,
+possibly in autocomplete mode. **Do not** use ``request.tm`` and
+``request.dbsession`` and such for these cases as the work added to that
+transaction is expected to be aborted upon any failures.
+
+Retries
+-------
+
+``pyramid_tm`` ships with support for pyramid_retry_ which is an
+execution policy that will retry requests when they fail with exceptions
+marked as retryable. By default, retrying is turned off. In order to turn it
+on you must update your app's configuration:
+
+.. code-block:: python
+
+    from pyramid.config import Configurator
+
+    def main(global_config, **settings):
+        config = Configurator(settings=settings)
+        config.include('pyramid_retry')
+        config.include('pyramid_tm')
+
+Finally, ensure that your application's settings have ``retry.attempts``
+set to a value greater than ``1``.
+
+When the transaction manager calls the downstream handler, if the handler
+raises a :term:`retryable` exception, ``pyramid_tm`` will mark the exception
+as retryable by ``pyramid_retry``. The execution policy will detect a
+retryable error and create a new copy of the request with new state.
+
+Retryable exceptions include ``ZODB.POSException.ConflictError``, and
+certain exceptions raised by various data managers, such as
+``psycopg2.extensions.TransactionRollbackError``, ``cx_Oracle.DatabaseError``
+where the exception's code is 8877.  Any exception which inherits from
+``transaction.interfaces.TransientError`` will be marked as retryable.
+
+Read more about retrying requests in the pyramid_retry_ documentation.
+
+.. _pyramid_retry: http://docs.pylonsproject.org/projects/pyramid-retry/en/latest/
 
 Custom Transaction Managers
 ---------------------------
@@ -136,7 +249,6 @@ outside of the tween or during a request in which ``pyramid_tm`` was disabled,
     aborts the implicit transaction. Instead, if you set ``explicit=True``,
     any code affecting the manager outside of the lifecycle of the transaction
     will cause an error and will be noticed quickly.
-
 
 Adding an Activation Hook
 -------------------------
@@ -261,40 +373,20 @@ from its contents.  In the above example, the code would be implemented as a
 "commit_veto" function which lives in the "package" submodule of the "my"
 package.
 
-Retrying
---------
+View Predicates
+---------------
 
-``pyramid_tm`` ships with support for pyramid_retry_ which is an
-execution policy that will retry requests when they fail with exceptions
-marked as retryable. By default, retrying is turned off. In order to turn it
-on you must update your app's configuration:
+``pyramid_tm`` registers a view predicate named ``tm_active`` which accepts
+a value of ``True`` or ``False``. This can be useful for declaring intent
+when defining exception views that require access to the transaction controlled
+by ``pyramid_tm``. For specific examples,  see :ref:`error_handling`.
 
-.. code-block:: python
-
-    from pyramid.config import Configurator
-
-    def main(global_config, **settings):
-        config = Configurator(settings=settings)
-        config.include('pyramid_retry')
-        config.include('pyramid_tm')
-
-Finally, ensure that your application's settings have ``retry.attempts``
-set to a value greater than ``1``.
-
-When the transaction manager calls the downstream handler, if the handler
-raises a :term:`retryable` exception, ``pyramid_tm`` will mark the exception
-as retryable by ``pyramid_retry``. The execution policy will detect a
-retryable error and create a new copy of the request with new state.
-
-Retryable exceptions include ``ZODB.POSException.ConflictError``, and
-certain exceptions raised by various data managers, such as
-``psycopg2.extensions.TransactionRollbackError``, ``cx_Oracle.DatabaseError``
-where the exception's code is 8877.  Any exception which inherits from
-``transaction.interfaces.TransientError`` will be marked as retryable.
-
-Read more about retrying requests in the pyramid_retry_ documentation.
-
-.. _pyramid_retry: http://docs.pylonsproject.org/projects/pyramid-retry/en/latest/
+If the request is manually completed via ``request.tm.abort()`` or
+``request.tm.commit()``, this predicate may be incorrect depending on the
+specific transaction manager being used. After completing a transaction
+controlled by the transaction manager in explicit mode it is necessary to
+invoke ``request.tm.begin()`` to start a new one or any subsequent uses of
+the transaction manager will fail.
 
 Explicit Tween Configuration
 ----------------------------
@@ -330,7 +422,6 @@ More Information
    api.rst
    glossary.rst
 
-
 Reporting Bugs / Development Versions
 -------------------------------------
 
@@ -341,7 +432,6 @@ Visit http://github.com/Pylons/pyramid_tm/issues to report bugs.
 
 
 .. include:: ../CHANGES.rst
-
 
 Indices and tables
 ------------------
