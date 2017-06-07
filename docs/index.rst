@@ -135,6 +135,9 @@ completed. For example:
 
     @exception_view_config(Exception, tm_active=True)
     def transactional_error_view(exc, request):
+        # depending on your AuthenticationPolicy the authenticated
+        # userid likely requires a lookup in your database which would
+        # require an active transaction
         if request.authenticated_userid is not None:
             log.exception('authenticated user caused an exception')
         else:
