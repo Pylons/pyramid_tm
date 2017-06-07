@@ -570,6 +570,62 @@ class TestIntegration(unittest.TestCase):
         else:  # pragma: no cover
             raise AssertionError
 
+    def test_excview_rendered_after_failed_commit(self):
+        config = self.config
+        tm = DummyTransaction(finish_with_exc=ValueError)
+        config.add_settings({'tm.manager_hook': lambda r: tm})
+        config.add_view(lambda r: 'ok', renderer='string')
+        def exc_view(request):
+            return 'failure'
+        config.add_view(exc_view, context=ValueError, renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'failure')
+
+    def test_excview_rendered_after_failed_abort(self):
+        config = self.config
+        tm = DummyTransaction(finish_with_exc=ValueError)
+        config.add_settings({'tm.manager_hook': lambda r: tm})
+        config.add_settings({'tm.commit_veto': lambda req, resp: True})
+        config.add_view(lambda r: 'ok', renderer='string')
+        def exc_view(request):
+            return 'failure'
+        config.add_view(exc_view, context=ValueError, renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'failure')
+
+    def test_excview_rendered_after_failed_abort_from_uncaught_exc(self):
+        config = self.config
+        tm = DummyTransaction(finish_with_exc=ValueError)
+        config.add_settings({'tm.manager_hook': lambda r: tm})
+        def view(request):
+            raise RuntimeError
+        config.add_view(view)
+        def exc_view(request):
+            return 'failure'
+        config.add_view(exc_view, context=ValueError, renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'failure')
+
+    def test_failed_commit_reraises(self):
+        config = self.config
+        tm = DummyTransaction(finish_with_exc=ValueError)
+        config.add_settings({'tm.manager_hook': lambda r: tm})
+        config.add_view(lambda r: 'ok', renderer='string')
+        app = self._makeApp()
+        self.assertRaises(ValueError, lambda: app.get('/'))
+
+    def test_failed_abort_reraises(self):
+        config = self.config
+        tm = DummyTransaction(finish_with_exc=ValueError)
+        config.add_settings({'tm.manager_hook': lambda r: tm})
+        config.add_settings({'tm.commit_veto': lambda req, resp: True})
+        config.add_view(lambda r: 'ok', renderer='string')
+        app = self._makeApp()
+        self.assertRaises(ValueError, lambda: app.get('/'))
+
 
 class Dummy(object):
     def __init__(self, **kwargs):
@@ -582,13 +638,14 @@ class DummyTransaction(TransactionManager):
     _resources = []
     user = None
 
-    def __init__(self, doomed=False, retryable=False):
+    def __init__(self, doomed=False, retryable=False, finish_with_exc=None):
         self.doomed = doomed
         self.began = 0
         self.committed = 0
         self.aborted = 0
         self.retryable = retryable
         self.active = False
+        self.finish_with_exc = finish_with_exc
 
     def _retryable(self, t, v):
         if self.active:
@@ -607,10 +664,14 @@ class DummyTransaction(TransactionManager):
 
     def commit(self):
         self.committed+=1
+        if self.finish_with_exc:
+            raise self.finish_with_exc
 
     def abort(self):
         self.active = False
         self.aborted+=1
+        if self.finish_with_exc:
+            raise self.finish_with_exc
 
     def note(self, value):
         self._note = value
