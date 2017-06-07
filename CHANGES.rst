@@ -1,6 +1,15 @@
 Changes
 -------
 
+unreleased
+^^^^^^^^^^
+
+- On Pyramid >= 1.7 any errors raised from ``pyramid_tm`` invoking
+  ``request.tm.abort`` and ``request.tm.commit`` will be caught and used
+  to lookup and execute an exception view to return an error response. This
+  exception view will be executed with an inactive transaction manager.
+  See https://github.com/Pylons/pyramid_tm/pull/61
+
 2.0 (2017-04-11)
 ^^^^^^^^^^^^^^^^
 
