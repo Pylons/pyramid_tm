@@ -416,6 +416,19 @@ def skip_if_missing(module):  # pragma: no cover
         return wrapped
     return wrapper
 
+def skip_if_package_lt(pkg, version):  # pragma: no cover
+    import pkg_resources
+    def wrapper(fn):
+        dist = pkg_resources.get_distribution(pkg)
+        if dist.parsed_version < pkg_resources.parse_version(version):
+            return
+
+        @functools.wraps(fn)
+        def wrapped(*args, **kwargs):
+            return fn(*args, **kwargs)
+        return wrapped
+    return wrapper
+
 class TestIntegration(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp(autocommit=False)
@@ -570,6 +583,7 @@ class TestIntegration(unittest.TestCase):
         else:  # pragma: no cover
             raise AssertionError
 
+    @skip_if_package_lt('pyramid', '1.7')
     def test_excview_rendered_after_failed_commit(self):
         config = self.config
         tm = DummyTransaction(finish_with_exc=ValueError)
@@ -582,6 +596,7 @@ class TestIntegration(unittest.TestCase):
         resp = app.get('/')
         self.assertEqual(resp.body, b'failure')
 
+    @skip_if_package_lt('pyramid', '1.7')
     def test_excview_rendered_after_failed_abort(self):
         config = self.config
         tm = DummyTransaction(finish_with_exc=ValueError)
@@ -595,6 +610,7 @@ class TestIntegration(unittest.TestCase):
         resp = app.get('/')
         self.assertEqual(resp.body, b'failure')
 
+    @skip_if_package_lt('pyramid', '1.7')
     def test_excview_rendered_after_failed_abort_from_uncaught_exc(self):
         config = self.config
         tm = DummyTransaction(finish_with_exc=ValueError)
