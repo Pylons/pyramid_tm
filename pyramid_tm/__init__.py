@@ -1,5 +1,6 @@
 import sys
 from pyramid.exceptions import ConfigurationError
+from pyramid.exceptions import NotFound
 from pyramid.settings import asbool
 from pyramid.tweens import EXCVIEW
 from pyramid.util import DottedNameResolver
@@ -57,6 +58,48 @@ def tm_tween_factory(handler, registry):
                       'setting in version 2.0. To re-enable retry support '
                       'add pyramid_retry to your application.')
 
+    # define a finish function that we'll call from every branch to
+    # commit or abort the transaction - this can't be in a finally because
+    # we only want the finisher to wrap commit/abort which occur in several
+    # disparate branches below and we want to avoid catching errors from
+    # non commit/abort related operations
+    def _finish(request, finisher, response=None):
+        # ensure the manager is inactive prior to invoking the finisher
+        # such that when we handle any possible exceptions it is ready
+        environ = request.environ
+        if 'tm.active' in environ:
+            del environ['tm.active']
+        if 'tm.manager' in environ:
+            del environ['tm.manager']
+
+        try:
+            finisher()
+
+        # catch any errors that occur specifically during commit/abort
+        # and attempt to render them to a response
+        except Exception:
+            exc_info = sys.exc_info()
+            try:
+                if hasattr(request, 'invoke_exception_view'):  # pyramid >= 1.7
+                    response = request.invoke_exception_view(exc_info)
+
+                else:  # pragma: no cover
+                    raise NotFound
+
+            except NotFound:
+                # since commit/abort has already been executed it's highly
+                # likely we will not detect any backend-specific retryable
+                # issues here unless they directly subclass TransientError
+                # since the manager has cleared its list of data mangers at
+                # this point
+                maybe_tag_retryable(request, exc_info)
+                reraise(*exc_info)
+
+            finally:
+                del exc_info  # avoid leak
+
+        return response
+
     def tm_tween(request):
         environ = request.environ
         if (
@@ -76,9 +119,9 @@ def tm_tween_factory(handler, registry):
         environ['tm.active'] = True
         environ['tm.manager'] = manager
 
-        try:
-            t = manager.begin()
+        t = manager.begin()
 
+        try:
             # do not address the authentication policy until we are within
             # the transaction boundaries
             if annotate_user:
@@ -106,28 +149,29 @@ def tm_tween_factory(handler, registry):
                 veto = commit_veto(request, response)
                 if veto:
                     raise AbortWithResponse(response)
-            manager.commit()
-            return response
+            return _finish(request, manager.commit, response)
 
         except AbortWithResponse as e:
-            manager.abort()
-            return e.response
+            return _finish(request, manager.abort, e.response)
 
+        # an unhandled exception was propagated - we should abort the
+        # transaction and re-raise the original exception
         except Exception:
             exc_info = sys.exc_info()
             try:
+                # try to tag the original exception as retryable before
+                # aborting the transaction because after abort it may not
+                # be possible to determine if the exception is retryable
+                # because the bound data managers are cleared
                 maybe_tag_retryable(request, exc_info)
+
+                exc_response = _finish(request, manager.abort)
+                if exc_response is not None:
+                    return exc_response
                 reraise(*exc_info)
 
             finally:
-                manager.abort()
-
-                del exc_info # avoid leak
-
-        # cleanup any changes we made to the request
-        finally:
-            del environ['tm.active']
-            del environ['tm.manager']
+                del exc_info  # avoid leak
 
     return tm_tween
 
@@ -165,6 +209,13 @@ def is_tm_active(request):
     Return ``True`` if the ``request`` is currently being managed by
     the pyramid_tm tween. If ``False`` then it may be necessary to manage
     transactions yourself.
+
+    .. note::
+
+       This does **not** indicate that there is a current transaction. For
+       example, ``request.tm.get()`` may raise a ``NoTransaction`` error even
+       though ``is_tm_active`` returns ``True``. This would be caused by user
+       code that manually completed a transaction and did not begin a new one.
     """
     return request.environ.get('tm.active', False)
 

@@ -16,3 +16,5 @@
 .. autofunction:: create_tm
 
 .. autofunction:: explicit_manager
+
+.. autoclass:: TMActivePredicate
