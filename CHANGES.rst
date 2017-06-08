@@ -1,8 +1,8 @@
 Changes
 -------
 
-unreleased
-^^^^^^^^^^
+2.1 (2017-06-07)
+^^^^^^^^^^^^^^^^
 
 - On Pyramid >= 1.7 any errors raised from ``pyramid_tm`` invoking
   ``request.tm.abort`` and ``request.tm.commit`` will be caught and used
