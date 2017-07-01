@@ -13,18 +13,12 @@ matrix:
           env: TOXENV=py36
         - python: pypy
           env: TOXENV=pypy
+        - python: 2.7
+          env: TOXENV=py27-pyramid15
         - python: 3.5
           env: TOXENV=py2-cover,py3-cover,coverage
         - python: 3.5
           env: TOXENV=docs
-        - python: 3.5
-          env: TOXENV=py35-pyramid18
-        - python: 3.5
-          env: TOXENV=py35-pyramid17
-        - python: 3.5
-          env: TOXENV=py35-pyramid16
-        - python: 3.5
-          env: TOXENV=py35-pyramid15
 
 install:
   - travis_retry pip install tox
