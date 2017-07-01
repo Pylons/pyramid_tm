@@ -502,6 +502,24 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(resp.body, b'failure')
         self.assertEqual(dm.action, 'abort')
 
+    def test_handled_error_commits_with_veto(self):
+        config = self.config
+        dm = DummyDataManager()
+        def view(request):
+            dm.bind(request.tm)
+            raise ValueError
+        config.add_view(view)
+        def exc_view(request):
+            return 'failure'
+        def commit_veto(request, response):
+            return request.exception is None
+        config.add_settings({'tm.commit_veto': commit_veto})
+        config.add_view(exc_view, context=ValueError, renderer='string')
+        app = self._makeApp()
+        resp = app.get('/')
+        self.assertEqual(resp.body, b'failure')
+        self.assertEqual(dm.action, 'commit')
+
     def test_explicit_manager_fails_before_tm(self):
         from transaction.interfaces import NoTransaction
         config = self.config
