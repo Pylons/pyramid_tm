@@ -1,14 +1,14 @@
 Changes
 -------
 
-unreleased
-^^^^^^^^^^
+2.2 (2017-07-03)
+^^^^^^^^^^^^^^^^
 
 Backward Incompatibilities
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - This is a backward-incompatible change for anyone using the
-  ``tm.commit_veto`` hook and they may continue reading.
+  ``tm.commit_veto`` hook. Anyone else is unaffected.
 
   The ``tm.commit_veto`` hook will now be consulted for any squashed
   exceptions instead of always aborting. Previously, if an exception
@@ -27,7 +27,7 @@ Backward Incompatibilities
   In most cases the response would result in 4xx or 5xx exception and would
   be aborted - this behavior remains the same. However, if the squashed
   exception rendered a response that is 3xx or 2xx (such as raising
-  ``pyramid.httpexceptions.XTTPFound``), then the transaction will be
+  ``pyramid.httpexceptions.HTTPFound``), then the transaction will be
   committed instead of aborted.
 
   See https://github.com/Pylons/pyramid_tm/pull/65
