@@ -6,6 +6,9 @@ unreleased
 
 - Support Python 3.7.
 
+- Fix error handling when using ``transaction >= 2.4.0``.
+  See https://github.com/Pylons/pyramid_tm/pull/68
+
 2.2 (2017-07-03)
 ^^^^^^^^^^^^^^^^
 

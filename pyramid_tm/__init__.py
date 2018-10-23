@@ -189,9 +189,15 @@ def explicit_manager(request):
 
 
 def maybe_tag_retryable(request, exc_info):
-    if request.tm._retryable(*exc_info[:-1]):
-        exc = exc_info[1]
-        if exc:
+    exc = exc_info[1]
+    txn = request.tm.get()
+    if hasattr(txn, 'isRetryableError'):
+        if txn.isRetryableError(exc):
+            zope.interface.alsoProvides(exc, IRetryableError)
+
+    # bw-compat transaction < 2.4
+    elif hasattr(request.tm, '_retryable'):  # pragma: no cover
+        if request.tm._retryable(*exc_info[:-1]):
             zope.interface.alsoProvides(exc, IRetryableError)
 
 
