@@ -7,7 +7,7 @@ Glossary
    :sorted:
 
    Pyramid
-      A `web framework <http://pylonshq.com/pyramid>`_.
+      A `web framework <https://docs.pylonsproject.org/projects/pyramid/en/latest/>`_.
 
    data manager
       The ``transaction`` package wraps data managers implemented for
@@ -25,4 +25,4 @@ Glossary
       A database transaction comprises a unit of work performed within a
       database management system.  In the context of the Pyramid documentation,
       "transaction" is also the name of a `Python package
-      <http://pypi.python.org/pypi/transaction>`__ used by ``pyramid_tm``.
+      <https://pypi.org/project/transaction/>`__ used by ``pyramid_tm``.
