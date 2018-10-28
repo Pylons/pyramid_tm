@@ -8,9 +8,9 @@ Overview
 
 ``pyramid_tm`` is a package which allows :term:`Pyramid` requests to join
 the active :term:`transaction` as provided by the Python `transaction 
-<http://pypi.python.org/pypi/transaction>`_ package. (See the `documentation
+<https://pypi.org/project/transaction/>`_ package. (See the `documentation
 for the transaction package 
-<http://zodb.readthedocs.io/en/latest/transactions.html>`_ for an
+<https://zodb.readthedocs.io/en/latest/transactions.html>`_ for an
 explanation of what "joining the active transaction" means).
 
 Installation
@@ -73,15 +73,15 @@ instead committed using ``request.tm.commit()``.
 
 By itself, this :term:`transaction` machinery doesn't do much.  It is up to
 third-party code to *join* the active transaction to benefit.  See
-`repoze.filesafe <https://pypi.python.org/pypi/repoze.filesafe>`_ for an
+`repoze.filesafe <https://pypi.org/project/repoze.filesafe/>`_ for an
 example of how files creation can be committed or rolled back based on
 :term:`transaction` and the `pyramid_mailer
-<http://docs.pylonsproject.org/projects/pyramid_mailer/dev/>`_ package to see
+<https://docs.pylonsproject.org/projects/pyramid_mailer/en/latest/>`_ package to see
 how you can prevent emails from being sent until a transaction succeeds.
 ZODB database connections are automatically joined to the transaction, as
 well as SQLAlchemy connections which are configured with
 ``zope.sqlalchemy.register(session)`` from the `zope.sqlalchemy
-<https://pypi.python.org/pypi/zope.sqlalchemy>`_ package.
+<https://pypi.org/project/zope.sqlalchemy/>`_ package.
 
 Savepoints
 ----------
@@ -168,7 +168,7 @@ transaction is expected to be aborted upon any failures.
 Retries
 -------
 
-``pyramid_tm`` ships with support for pyramid_retry_ which is an
+``pyramid_tm`` ships with support for `pyramid_retry <https://docs.pylonsproject.org/projects/pyramid-retry/en/latest/>`_ which is an
 execution policy that will retry requests when they fail with exceptions
 marked as retryable. By default, retrying is turned off. In order to turn it
 on you must update your app's configuration:
@@ -196,9 +196,7 @@ certain exceptions raised by various data managers, such as
 where the exception's code is 8877.  Any exception which inherits from
 ``transaction.interfaces.TransientError`` will be marked as retryable.
 
-Read more about retrying requests in the pyramid_retry_ documentation.
-
-.. _pyramid_retry: http://docs.pylonsproject.org/projects/pyramid-retry/en/latest/
+Read more about retrying requests in the `pyramid_retry documentation <https://docs.pylonsproject.org/projects/pyramid-retry/en/latest/>`_.
 
 Custom Transaction Managers
 ---------------------------
@@ -428,10 +426,10 @@ More Information
 Reporting Bugs / Development Versions
 -------------------------------------
 
-Visit http://github.com/Pylons/pyramid_tm to download development or
+Visit https://github.com/Pylons/pyramid_tm to download development or
 tagged versions.
 
-Visit http://github.com/Pylons/pyramid_tm/issues to report bugs.
+Visit https://github.com/Pylons/pyramid_tm/issues to report bugs.
 
 
 .. include:: ../CHANGES.rst

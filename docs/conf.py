@@ -17,13 +17,13 @@
 # make it absolute, like shown here.
 #sys.path.append(os.path.abspath('some/directory'))
 
-import sys, os
+import datetime
 import pkg_resources
 import pylons_sphinx_themes
 
 html_theme_path = pylons_sphinx_themes.get_html_themes_path()
 html_theme = 'pyramid'
-html_theme_options = dict(github_url='http://github.com/Pylons/pyramid_tm')
+html_theme_options = dict(github_url='https://github.com/Pylons/pyramid_tm')
 
 # General configuration
 # ---------------------
@@ -38,7 +38,7 @@ extensions = [
 # Looks for pyramid's objects
 intersphinx_mapping = {
     'pyramid':
-    ('http://docs.pylonsproject.org/projects/pyramid/en/latest/', None)}
+    ('https://docs.pylonsproject.org/projects/pyramid/en/latest/', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['.templates']
@@ -50,8 +50,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General substitutions.
+thisyear = datetime.datetime.now().year
+copyright = '2011-%s, Agendaless Consulting <chrism@plope.com>' % thisyear
 project = 'pyramid_tm'
-copyright = '2011, Agendaless Consulting <chrism@plope.com>'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -94,6 +95,9 @@ exclude_patterns = ['_themes/README.rst',]
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+# Do not use smart quotes.
+smartquotes = False
+
 
 # Options for HTML output
 # -----------------------
@@ -115,7 +119,7 @@ pygments_style = 'sphinx'
 
 # The name of an image file (within the static path) to place at the top of
 # the sidebar.
-html_logo = '_static/logo_hi.gif'
+# html_logo = '_static/logo_hi.gif'
 
 # The name of an image file (within the static path) to use as favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or
@@ -137,7 +141,14 @@ html_last_updated_fmt = '%b %d, %Y'
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+# Control display of sidebars and include ethical ads from RTD
+html_sidebars = {'**': [
+    'localtoc.html',
+    'ethicalads.html',
+    'relations.html',
+    'sourcelink.html',
+    'searchbox.html',
+]}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
