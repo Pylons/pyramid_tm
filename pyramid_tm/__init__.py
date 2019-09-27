@@ -13,6 +13,13 @@ try:
 except ImportError:  # pragma: no cover
     IRetryableError = zope.interface.Interface
 
+try:
+    from pyramid_retry import mark_error_retryable
+except ImportError:  # pragma: no cover
+    mark_error_retryable = lambda error: None
+
+mark_error_retryable(transaction.interfaces.TransientError)
+
 from .compat import reraise
 from .compat import text_
 
