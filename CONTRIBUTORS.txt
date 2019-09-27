@@ -109,3 +109,4 @@ Contributors
 - Donald Stufft, 2015/02/02
 - Nick Stenning, 2016/09/06
 - Steve Piercy, 2016/11/19
+- Sean Hammond, 2019/09/27
