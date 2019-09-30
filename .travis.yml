@@ -22,7 +22,7 @@ matrix:
         - python: 2.7
           env: TOXENV=py27-pyramid15
         - python: 3.5
-          env: TOXENV=py2-cover,py3-cover,coverage
+          env: TOXENV=py27-cover,py35-cover,coverage
         - python: 3.5
           env: TOXENV=docs
 
