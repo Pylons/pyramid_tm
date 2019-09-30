@@ -1,8 +1,8 @@
 Changes
 -------
 
-unreleased
-^^^^^^^^^^
+2.3 (2019-09-30)
+^^^^^^^^^^^^^^^^
 
 - Mark all ``transaction.interfaces.TransientError`` exceptions
   automatically as retryable by ``pyramid_retry`` if it is installed.
