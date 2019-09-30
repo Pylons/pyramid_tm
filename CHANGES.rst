@@ -1,6 +1,13 @@
 Changes
 -------
 
+unreleased
+^^^^^^^^^^
+
+- Mark all ``transaction.interfaces.TransientError`` exceptions
+  automatically as retryable by ``pyramid_retry`` if it is installed.
+  See https://github.com/Pylons/pyramid_tm/pull/71
+
 2.2.1 (2018-10-23)
 ^^^^^^^^^^^^^^^^^^
 
