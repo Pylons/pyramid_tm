@@ -135,24 +135,24 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(txn.aborted)
         self.assertFalse(txn.committed)
 
-    def test_handler_w_native_unauthenticated_userid(self):
+    def test_handler_w_native_authenticated_userid(self):
         self.config.testing_securitypolicy(userid='phred')
         self._callFUT()
         self.assertEqual(self.txn.user, u'phred')
 
-    def test_handler_w_utf8_unauthenticated_userid(self):
+    def test_handler_w_utf8_authenticated_userid(self):
         USERID = b'phred/\xd1\x80\xd0\xb5\xd1\x81'.decode('utf-8')
         self.config.testing_securitypolicy(userid=USERID)
         self._callFUT()
         self.assertEqual(self.txn.user, u'phred/рес')
 
-    def test_handler_w_latin1_unauthenticated_userid(self):
+    def test_handler_w_latin1_authenticated_userid(self):
         USERID = b'\xc4\xd6\xdc'
         self.config.testing_securitypolicy(userid=USERID)
         self._callFUT()
         self.assertEqual(self.txn.user, u'ÄÖÜ')
 
-    def test_handler_w_integer_unauthenticated_userid(self):
+    def test_handler_w_integer_authenticated_userid(self):
         # See https://github.com/Pylons/pyramid_tm/issues/28
         USERID = 1234
         self.config.testing_securitypolicy(userid=USERID)

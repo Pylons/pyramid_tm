@@ -7,6 +7,11 @@ unreleased
 - Allow overriding ``pyramid_tm`` via the environ for testing purposes.
   See https://github.com/Pylons/pyramid_tm/pull/72
 
+- When ``tm.annotate_user`` is enabled, use ``request.authenticated_userid``
+  instead of ``request.unauthenticated_userid``. The latter is deprecated in
+  Pyramid 2.0.
+  See https://github.com/Pylons/pyramid_tm/pull/72
+
 2.3 (2019-09-30)
 ^^^^^^^^^^^^^^^^
 

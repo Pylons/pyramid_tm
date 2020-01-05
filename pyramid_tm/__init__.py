@@ -132,7 +132,7 @@ def tm_tween_factory(handler, registry):
             # do not address the authentication policy until we are within
             # the transaction boundaries
             if annotate_user:
-                userid = request.unauthenticated_userid
+                userid = request.authenticated_userid
                 if userid:
                     t.user = text_(userid)
             try:
