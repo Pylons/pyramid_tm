@@ -1,6 +1,12 @@
 Changes
 -------
 
+unreleased
+^^^^^^^^^^
+
+- Allow overriding ``pyramid_tm`` via the environ for testing purposes.
+  See https://github.com/Pylons/pyramid_tm/pull/72
+
 2.3 (2019-09-30)
 ^^^^^^^^^^^^^^^^
 
