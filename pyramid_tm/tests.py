@@ -330,7 +330,6 @@ class Test_create_tm(unittest.TestCase):
         # Get rid of the request.tm attribute since it shouldn't be here yet.
         del self.request.tm
 
-
     def tearDown(self):
         testing.tearDown()
 
@@ -343,10 +342,15 @@ class Test_create_tm(unittest.TestCase):
     def test_default_threadlocal(self):
         self.assertTrue(self._callFUT() is transaction.manager)
 
-    def test_overridden_manager(self):
+    def test_overridden_manager_hook(self):
         txn = DummyTransaction()
         self.request.registry.settings["tm.manager_hook"] = lambda r: txn
         self.assertTrue(self._callFUT() is txn)
+
+    def test_overridden_manager_environ(self):
+        tm = transaction.TransactionManager(explicit=True)
+        self.request.environ['tm.manager'] = tm
+        self.assertTrue(self._callFUT() is tm)
 
 def veto_true(request, response):
     return True

@@ -209,12 +209,16 @@ def maybe_tag_retryable(request, exc_info):
 
 
 def create_tm(request):
+    manager = request.environ.get('tm.manager')
+    if manager:
+        return manager
+
     manager_hook = request.registry.settings.get('tm.manager_hook')
     if manager_hook:
         manager_hook = resolver.maybe_resolve(manager_hook)
         return manager_hook(request)
-    else:
-        return transaction.manager
+
+    return transaction.manager
 
 
 def is_tm_active(request):

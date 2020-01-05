@@ -414,6 +414,39 @@ By default the tween will access
 the transaction with information about the user. This can be turned off
 by setting the ini option ``tm.annotate_user = false``.
 
+Testing
+-------
+
+You can partially disable or override ``pyramid_tm`` in your test suite.
+This can be helpful if you want to handle transactions externally - allowing you to rollback or keep them open across multiple requests.
+
+1. Tell ``pyramid_tm`` that something else is handling transactions by setting ``tm.active`` in the WSGI environ.
+
+2. Provide your own transaction manager to the app to override ``request.tm`` by setting ``tm.manager`` to your own object.
+
+.. code-block:: python
+    :linenos:
+
+    import pytest
+    import transaction
+    from webtest import TestApp
+
+    @pytest.fixture
+    def testapp():
+        app = ...
+        tm = transaction.TransactionManager(explicit=True)
+        tm.begin()
+        tm.doom()  # ensure no one can call tm.commit() manually
+
+        testapp = TestApp(app, extra_environ={
+            'tm.active': True,    # disable pyramid_tm
+            'tm.manager': tm,    # pass in our own tm for the app to use
+        })
+
+        yield testapp
+
+        tm.abort()
+
 More Information
 ----------------
 
