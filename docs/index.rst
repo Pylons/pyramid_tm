@@ -410,7 +410,7 @@ Avoid Accessing the Authentication Policy
 -----------------------------------------
 
 By default the tween will access
-:attr:`pyramid.request.Request.unauthenticated_userid` in order to annotate
+:attr:`pyramid.request.Request.authenticated_userid` in order to annotate
 the transaction with information about the user. This can be turned off
 by setting the ini option ``tm.annotate_user = false``.
 
