@@ -46,6 +46,7 @@ def default_commit_veto(request, response):
 
 class AbortWithResponse(Exception):
     """ Abort the transaction but return a pre-baked response."""
+
     def __init__(self, response):
         self.response = response
 
@@ -61,9 +62,11 @@ def tm_tween_factory(handler, registry):
     annotate_user = asbool(settings.get('tm.annotate_user', True))
 
     if 'tm.attempts' in settings:  # pragma: no cover
-        warnings.warn('pyramid_tm removed support for the "tm.attempts" '
-                      'setting in version 2.0. To re-enable retry support '
-                      'add pyramid_retry to your application.')
+        warnings.warn(
+            'pyramid_tm removed support for the "tm.attempts" '
+            'setting in version 2.0. To re-enable retry support '
+            'add pyramid_retry to your application.'
+        )
 
     # define a finish function that we'll call from every branch to
     # commit or abort the transaction - this can't be in a finally because
@@ -111,11 +114,14 @@ def tm_tween_factory(handler, registry):
         environ = request.environ
         if (
             # don't handle txn mgmt if repoze.tm is in the WSGI pipeline
-            'repoze.tm.active' in environ or
+            'repoze.tm.active' in environ
+            or
             # pyramid_tm should only be active once
-            'tm.active' in environ or
+            'tm.active' in environ
+            or
             # check activation hooks
-            activate_hook is not None and not activate_hook(request)
+            activate_hook is not None
+            and not activate_hook(request)
         ):
             return handler(request)
 
@@ -246,6 +252,7 @@ class TMActivePredicate(object):
     .. seealso:: See :func:`pyramid_tm.is_tm_active`.
 
     """
+
     def __init__(self, val, config):
         if not isinstance(val, bool):
             raise ConfigurationError(
@@ -261,7 +268,7 @@ class TMActivePredicate(object):
 
     def __call__(self, context, request):
         is_active = is_tm_active(request)
-        return ((self.val and is_active) or (not self.val and not is_active))
+        return (self.val and is_active) or (not self.val and not is_active)
 
 
 def includeme(config):

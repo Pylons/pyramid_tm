@@ -8,9 +8,11 @@ from pyramid import testing
 import webtest
 from tests import activate_false, create_manager, dummy_tween_factory
 
+
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
         from pyramid_tm import default_commit_veto
+
         return default_commit_veto(request, response)
 
     def test_it_true_500(self):
@@ -46,16 +48,17 @@ class TestDefaultCommitVeto(unittest.TestCase):
         self.assertFalse(self._callFUT(response))
 
     def test_it_false_x_tm_commit(self):
-        response = DummyResponse('200 OK', {'x-tm':'commit'})
+        response = DummyResponse('200 OK', {'x-tm': 'commit'})
         self.assertFalse(self._callFUT(response))
 
     def test_it_true_x_tm_abort(self):
-        response = DummyResponse('200 OK', {'x-tm':'abort'})
+        response = DummyResponse('200 OK', {'x-tm': 'abort'})
         self.assertTrue(self._callFUT(response))
 
     def test_it_true_x_tm_anythingelse(self):
-        response = DummyResponse('200 OK', {'x-tm':''})
+        response = DummyResponse('200 OK', {'x-tm': ''})
         self.assertTrue(self._callFUT(response))
+
 
 class Test_tm_tween_factory(unittest.TestCase):
     def setUp(self):
@@ -71,8 +74,10 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def _callFUT(self, handler=None, registry=None, request=None, txn=None):
         if handler is None:
+
             def handler(request):
                 return self.response
+
         if registry is None:
             registry = self.registry
         if request is None:
@@ -81,6 +86,7 @@ class Test_tm_tween_factory(unittest.TestCase):
             txn = self.txn
         request.tm = txn
         from pyramid_tm import tm_tween_factory
+
         factory = tm_tween_factory(handler, registry)
         return factory(request)
 
@@ -99,15 +105,13 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertFalse(self.txn.began)
 
     def test_should_activate_true(self):
-        self.settings.update(
-            {'tm.activate_hook':'tests.activate_true'})
+        self.settings.update({'tm.activate_hook': 'tests.activate_true'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
 
     def test_should_activate_false(self):
-        self.settings.update(
-            {'tm.activate_hook':'tests.activate_false'})
+        self.settings.update({'tm.activate_hook': 'tests.activate_false'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
@@ -115,6 +119,7 @@ class Test_tm_tween_factory(unittest.TestCase):
     def test_handler_exception(self):
         def handler(request):
             raise NotImplementedError
+
         self.assertRaises(NotImplementedError, self._callFUT, handler=handler)
         self.assertTrue(self.txn.began)
         self.assertTrue(self.txn.aborted)
@@ -122,11 +127,15 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_handler_retryable_exception_defaults_to_1(self):
         from transaction.interfaces import TransientError
+
         class Conflict(TransientError):
             pass
+
         count = []
+
         def handler(request, count=count):
             raise Conflict
+
         self.assertRaises(Conflict, self._callFUT, handler=handler)
 
     def test_handler_isdoomed(self):
@@ -175,8 +184,10 @@ class Test_tm_tween_factory(unittest.TestCase):
         class DummierRequest(DummyRequest):
             def _get_path_info(self):
                 b"\xc0".decode("utf-8")
+
             def _set_path_info(self, val):
                 pass
+
             path_info = property(_get_path_info, _set_path_info)
 
         request = DummierRequest()
@@ -187,7 +198,6 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_handler_notes_unicode_path(self):
         class DummierRequest(DummyRequest):
-
             def _get_path_info(self):
                 return b'collection/\xd1\x80\xd0\xb5\xd1\x81'.decode('utf-8')
 
@@ -203,7 +213,6 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_handler_notes_native_str_path(self):
         class DummierRequest(DummyRequest):
-
             def _get_path_info(self):
                 return u'some/resource'
 
@@ -219,21 +228,24 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_active_flag_set_during_handler(self):
         result = []
+
         def handler(request):
             if 'tm.active' in request.environ:
                 result.append('active')
             return self.response
+
         self._callFUT(handler=handler)
         self.assertEqual(result, ['active'])
 
     def test_active_flag_not_set_activate_false(self):
-        self.settings.update(
-            {'tm.activate_hook':'tests.activate_false'})
+        self.settings.update({'tm.activate_hook': 'tests.activate_false'})
         result = []
+
         def handler(request):
             if 'tm.active' not in request.environ:
                 result.append('not active')
             return self.response
+
         self._callFUT(handler=handler)
         self.assertEqual(result, ['not active'])
 
@@ -249,6 +261,7 @@ class Test_tm_tween_factory(unittest.TestCase):
     def test_active_flag_unset_on_egress_exception(self):
         def handler(request):
             raise NotImplementedError
+
         try:
             self._callFUT(handler=handler)
         except NotImplementedError:
@@ -258,8 +271,10 @@ class Test_tm_tween_factory(unittest.TestCase):
     def test_500_without_commit_veto(self):
         response = DummyResponse()
         response.status = '500 Bad Request'
+
         def handler(request):
             return response
+
         result = self._callFUT(handler=handler)
         self.assertEqual(result, response)
         self.assertTrue(self.txn.began)
@@ -271,8 +286,10 @@ class Test_tm_tween_factory(unittest.TestCase):
         settings['tm.commit_veto'] = 'pyramid_tm.default_commit_veto'
         response = DummyResponse()
         response.status = '500 Bad Request'
+
         def handler(request):
             return response
+
         result = self._callFUT(handler=handler)
         self.assertEqual(result, response)
         self.assertTrue(self.txn.began)
@@ -282,9 +299,11 @@ class Test_tm_tween_factory(unittest.TestCase):
     def test_null_commit_veto(self):
         response = DummyResponse()
         response.status = '500 Bad Request'
+
         def handler(request):
             return response
-        self.settings.update({'tm.commit_veto':None})
+
+        self.settings.update({'tm.commit_veto': None})
         result = self._callFUT(handler=handler)
         self.assertEqual(result, response)
         self.assertTrue(self.txn.began)
@@ -292,7 +311,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.committed)
 
     def test_commit_veto_true(self):
-        self.settings.update({'tm.commit_veto':'tests.veto_true'})
+        self.settings.update({'tm.commit_veto': 'tests.veto_true'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
@@ -300,7 +319,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertFalse(self.txn.committed)
 
     def test_commit_veto_false(self):
-        self.settings.update({'tm.commit_veto':'tests.veto_false'})
+        self.settings.update({'tm.commit_veto': 'tests.veto_false'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
@@ -315,16 +334,15 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.committed)
 
     def test_commit_veto_alias(self):
-        self.settings.update(
-            {'pyramid_tm.commit_veto':'tests.veto_true'})
+        self.settings.update({'pyramid_tm.commit_veto': 'tests.veto_true'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
         self.assertTrue(self.txn.aborted)
         self.assertFalse(self.txn.committed)
 
-class Test_create_tm(unittest.TestCase):
 
+class Test_create_tm(unittest.TestCase):
     def setUp(self):
         self.request = DummyRequest()
         self.request.registry = Dummy(settings={})
@@ -338,6 +356,7 @@ class Test_create_tm(unittest.TestCase):
         if request is None:
             request = self.request
         from pyramid_tm import create_tm
+
         return create_tm(request)
 
     def test_default_threadlocal(self):
@@ -358,20 +377,23 @@ class Test_includeme(unittest.TestCase):
     def test_it(self):
         from pyramid.tweens import EXCVIEW
         from pyramid_tm import includeme, create_tm, TMActivePredicate
+
         config = DummyConfig()
         includeme(config)
-        self.assertEqual(config.tweens,
-                         [('pyramid_tm.tm_tween_factory', None, EXCVIEW)])
-        self.assertEqual(config.request_methods,
-                         [(create_tm, 'tm', True)])
-        self.assertEqual(config.view_predicates,
-                         [('tm_active', TMActivePredicate)])
+        self.assertEqual(
+            config.tweens, [('pyramid_tm.tm_tween_factory', None, EXCVIEW)]
+        )
+        self.assertEqual(config.request_methods, [(create_tm, 'tm', True)])
+        self.assertEqual(
+            config.view_predicates, [('tm_active', TMActivePredicate)]
+        )
         self.assertEqual(len(config.actions), 1)
         self.assertEqual(config.actions[0][0], None)
         self.assertEqual(config.actions[0][2], 10)
 
     def test_invalid_dotted(self):
         from pyramid_tm import includeme
+
         config = DummyConfig()
         config.registry.settings["tm.manager_hook"] = "an.invalid.import"
         includeme(config)
@@ -379,9 +401,9 @@ class Test_includeme(unittest.TestCase):
 
     def test_valid_dotted(self):
         from pyramid_tm import includeme
+
         config = DummyConfig()
-        config.registry.settings["tm.manager_hook"] = \
-            "tests.create_manager"
+        config.registry.settings["tm.manager_hook"] = "tests.create_manager"
         includeme(config)
         config.actions[0][1]()
         self.assertTrue(
@@ -395,6 +417,7 @@ class Test_includeme(unittest.TestCase):
         finally:
             testing.tearDown()
 
+
 def skip_if_missing(module):  # pragma: no cover
     def wrapper(fn):
         try:
@@ -405,11 +428,15 @@ def skip_if_missing(module):  # pragma: no cover
         @functools.wraps(fn)
         def wrapped(*args, **kwargs):
             return fn(*args, **kwargs)
+
         return wrapped
+
     return wrapper
+
 
 def skip_if_package_lt(pkg, version):  # pragma: no cover
     import pkg_resources
+
     def wrapper(fn):
         dist = pkg_resources.get_distribution(pkg)
         if dist.parsed_version < pkg_resources.parse_version(version):
@@ -418,8 +445,11 @@ def skip_if_package_lt(pkg, version):  # pragma: no cover
         @functools.wraps(fn)
         def wrapped(*args, **kwargs):
             return fn(*args, **kwargs)
+
         return wrapped
+
     return wrapper
+
 
 class TestIntegration(unittest.TestCase):
     def setUp(self):
@@ -436,9 +466,11 @@ class TestIntegration(unittest.TestCase):
     def test_it(self):
         config = self.config
         dm = DummyDataManager()
+
         def view(request):
             dm.bind(request.tm)
             return 'ok'
+
         config.add_view(view, name='', renderer='string')
         app = self._makeApp()
         resp = app.get('/')
@@ -448,12 +480,16 @@ class TestIntegration(unittest.TestCase):
     @skip_if_missing('pyramid_retry')
     def test_transient_error_is_retried(self):
         from transaction.interfaces import TransientError
+
         config = self.config
         config.add_settings({'retry.attempts': 2})
         config.include('pyramid_retry')
+
         class Conflict(TransientError):
             pass
+
         calls = []
+
         def view(request):
             dm = DummyDataManager()
             dm.bind(request.tm)
@@ -462,6 +498,7 @@ class TestIntegration(unittest.TestCase):
                 raise Conflict
             calls.append('ok')
             return 'ok'
+
         config.add_view(view, renderer='string')
         app = self._makeApp()
         result = app.get('/')
@@ -471,9 +508,11 @@ class TestIntegration(unittest.TestCase):
     def test_unhandled_error_aborts(self):
         config = self.config
         dm = DummyDataManager()
+
         def view(request):
             dm.bind(request.tm)
             raise ValueError
+
         config.add_view(view)
         app = self._makeApp()
         self.assertRaises(ValueError, app.get, '/')
@@ -482,12 +521,16 @@ class TestIntegration(unittest.TestCase):
     def test_handled_error_aborts(self):
         config = self.config
         dm = DummyDataManager()
+
         def view(request):
             dm.bind(request.tm)
             raise ValueError
+
         config.add_view(view)
+
         def exc_view(request):
             return 'failure'
+
         config.add_view(exc_view, context=ValueError, renderer='string')
         app = self._makeApp()
         resp = app.get('/')
@@ -497,14 +540,19 @@ class TestIntegration(unittest.TestCase):
     def test_handled_error_commits_with_veto(self):
         config = self.config
         dm = DummyDataManager()
+
         def view(request):
             dm.bind(request.tm)
             raise ValueError
+
         config.add_view(view)
+
         def exc_view(request):
             return 'failure'
+
         def commit_veto(request, response):
             return request.exception is None
+
         config.add_settings({'tm.commit_veto': commit_veto})
         config.add_view(exc_view, context=ValueError, renderer='string')
         app = self._makeApp()
@@ -514,13 +562,17 @@ class TestIntegration(unittest.TestCase):
 
     def test_explicit_manager_fails_before_tm(self):
         from transaction.interfaces import NoTransaction
+
         config = self.config
         config.add_settings({'tm.manager_hook': 'pyramid_tm.explicit_manager'})
-        config.add_tween('tests.dummy_tween_factory',
-                         over='pyramid_tm.tm_tween_factory')
+        config.add_tween(
+            'tests.dummy_tween_factory', over='pyramid_tm.tm_tween_factory'
+        )
         dm = DummyDataManager()
+
         def dummy_handler(handler, request):
             dm.bind(request.tm)
+
         config.registry['dummy_handler'] = dummy_handler
         config.add_view(lambda r: r.response)
         app = self._makeApp()
@@ -528,14 +580,18 @@ class TestIntegration(unittest.TestCase):
 
     def test_explicit_manager_fails_after_tm(self):
         from transaction.interfaces import NoTransaction
+
         config = self.config
         config.add_settings({'tm.manager_hook': 'pyramid_tm.explicit_manager'})
-        config.add_tween('tests.dummy_tween_factory',
-                         over='pyramid_tm.tm_tween_factory')
+        config.add_tween(
+            'tests.dummy_tween_factory', over='pyramid_tm.tm_tween_factory'
+        )
         dm = DummyDataManager()
+
         def dummy_handler(handler, request):
             handler(request)
             dm.bind(request.tm)
+
         config.registry['dummy_handler'] = dummy_handler
         config.add_view(lambda r: r.response)
         app = self._makeApp()
@@ -544,9 +600,11 @@ class TestIntegration(unittest.TestCase):
     def test_explicit_manager_works_in_view(self):
         config = self.config
         dm = DummyDataManager()
+
         def view(request):
             dm.bind(request.tm)
             return 'ok'
+
         config.add_view(view, renderer='string')
         app = self._makeApp()
         resp = app.get('/')
@@ -556,11 +614,14 @@ class TestIntegration(unittest.TestCase):
     def test_tm_active_predicate_is_True(self):
         config = self.config
         dm = DummyDataManager()
+
         def true_view(request):
             dm.bind(request.tm)
             return 'ok'
+
         def false_view(request):  # pragma: no cover
             raise RuntimeError
+
         config.add_view(true_view, tm_active=True, renderer='string')
         config.add_view(false_view, tm_active=False, renderer='string')
         app = self._makeApp()
@@ -571,10 +632,13 @@ class TestIntegration(unittest.TestCase):
     def test_tm_active_predicate_is_False(self):
         config = self.config
         config.add_settings({'tm.activate_hook': activate_false})
+
         def true_view(request):  # pragma: no cover
             raise RuntimeError
+
         def false_view(request):
             return 'ok'
+
         config.add_view(true_view, tm_active=True, renderer='string')
         config.add_view(false_view, tm_active=False, renderer='string')
         app = self._makeApp()
@@ -583,6 +647,7 @@ class TestIntegration(unittest.TestCase):
 
     def test_tm_active_predicate_is_bool(self):
         from pyramid.exceptions import ConfigurationError
+
         config = self.config
         try:
             view = lambda r: 'ok'
@@ -599,8 +664,10 @@ class TestIntegration(unittest.TestCase):
         tm = DummyTransaction(finish_with_exc=ValueError)
         config.add_settings({'tm.manager_hook': lambda r: tm})
         config.add_view(lambda r: 'ok', renderer='string')
+
         def exc_view(request):
             return 'failure'
+
         config.add_view(exc_view, context=ValueError, renderer='string')
         app = self._makeApp()
         resp = app.get('/')
@@ -613,8 +680,10 @@ class TestIntegration(unittest.TestCase):
         config.add_settings({'tm.manager_hook': lambda r: tm})
         config.add_settings({'tm.commit_veto': lambda req, resp: True})
         config.add_view(lambda r: 'ok', renderer='string')
+
         def exc_view(request):
             return 'failure'
+
         config.add_view(exc_view, context=ValueError, renderer='string')
         app = self._makeApp()
         resp = app.get('/')
@@ -625,11 +694,15 @@ class TestIntegration(unittest.TestCase):
         config = self.config
         tm = DummyTransaction(finish_with_exc=ValueError)
         config.add_settings({'tm.manager_hook': lambda r: tm})
+
         def view(request):
             raise RuntimeError
+
         config.add_view(view)
+
         def exc_view(request):
             return 'failure'
+
         config.add_view(exc_view, context=ValueError, renderer='string')
         app = self._makeApp()
         resp = app.get('/')
@@ -657,6 +730,7 @@ class Dummy(object):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
+
 class DummyTransaction(TransactionManager):
     began = False
     committed = False
@@ -677,30 +751,31 @@ class DummyTransaction(TransactionManager):
         if self.active:
             return self.retryable
 
-    def get(self): # pragma: no cover
+    def get(self):  # pragma: no cover
         return self
 
     def isDoomed(self):
         return self.doomed
 
     def begin(self):
-        self.began+=1
+        self.began += 1
         self.active = True
         return self
 
     def commit(self):
-        self.committed+=1
+        self.committed += 1
         if self.finish_with_exc:
             raise self.finish_with_exc
 
     def abort(self):
         self.active = False
-        self.aborted+=1
+        self.aborted += 1
         if self.finish_with_exc:
             raise self.finish_with_exc
 
     def note(self, value):
         self._note = value
+
 
 class DummyDataManager(object):
     action = None
@@ -724,19 +799,21 @@ class DummyDataManager(object):
     def tpc_finish(self, transaction):
         pass
 
-    def tpc_abort(self, transaction): # pragma: no cover
+    def tpc_abort(self, transaction):  # pragma: no cover
         pass
 
     def sortKey(self):
         return 'dummy:%s' % id(self)
+
 
 class DummyRequest(testing.DummyRequest):
     def __init__(self, *args, **kwargs):
         self.tm = TransactionManager()
         super(DummyRequest, self).__init__(self, *args, **kwargs)
 
-    def invoke_subrequest(self, request, use_tweens): # pragma: no cover
+    def invoke_subrequest(self, request, use_tweens):  # pragma: no cover
         pass
+
 
 class DummyResponse(object):
     def __init__(self, status='200 OK', headers=None):
@@ -744,6 +821,7 @@ class DummyResponse(object):
         if headers is None:
             headers = {}
         self.headers = headers
+
 
 class DummyConfig(object):
     def __init__(self):
@@ -764,5 +842,3 @@ class DummyConfig(object):
 
     def action(self, x, fun, order=None):
         self.actions.append((x, fun, order))
-
-
