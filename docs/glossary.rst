@@ -26,3 +26,11 @@ Glossary
       database management system.  In the context of the Pyramid documentation,
       "transaction" is also the name of a `Python package
       <https://pypi.org/project/transaction/>`__ used by ``pyramid_tm``.
+
+   dotted Python name
+     A reference to a Python object by name using a string, in the form
+     ``path.to.modulename:attributename``.  Often used in Pyramid and
+     Setuptools configurations.  A variant is used in dotted names within
+     configurator method arguments that name objects (such as the "add_view"
+     method's "view" and "context" attributes): the colon (``:``) is not
+     used; in its place is a dot.
