@@ -5,7 +5,8 @@ import unittest
 import transaction
 from transaction import TransactionManager
 from pyramid import testing
-from webtest import TestApp
+import webtest
+from tests import activate_false, create_manager, dummy_tween_factory
 
 class TestDefaultCommitVeto(unittest.TestCase):
     def _callFUT(self, response, request=None):
@@ -99,14 +100,14 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_should_activate_true(self):
         self.settings.update(
-            {'tm.activate_hook':'pyramid_tm.tests.activate_true'})
+            {'tm.activate_hook':'tests.activate_true'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
 
     def test_should_activate_false(self):
         self.settings.update(
-            {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
+            {'tm.activate_hook':'tests.activate_false'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertFalse(self.txn.began)
@@ -227,7 +228,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_active_flag_not_set_activate_false(self):
         self.settings.update(
-            {'tm.activate_hook':'pyramid_tm.tests.activate_false'})
+            {'tm.activate_hook':'tests.activate_false'})
         result = []
         def handler(request):
             if 'tm.active' not in request.environ:
@@ -291,7 +292,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertTrue(self.txn.committed)
 
     def test_commit_veto_true(self):
-        self.settings.update({'tm.commit_veto':'pyramid_tm.tests.veto_true'})
+        self.settings.update({'tm.commit_veto':'tests.veto_true'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
@@ -299,7 +300,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         self.assertFalse(self.txn.committed)
 
     def test_commit_veto_false(self):
-        self.settings.update({'tm.commit_veto':'pyramid_tm.tests.veto_false'})
+        self.settings.update({'tm.commit_veto':'tests.veto_false'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
@@ -315,7 +316,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
     def test_commit_veto_alias(self):
         self.settings.update(
-            {'pyramid_tm.commit_veto':'pyramid_tm.tests.veto_true'})
+            {'pyramid_tm.commit_veto':'tests.veto_true'})
         result = self._callFUT()
         self.assertEqual(result, self.response)
         self.assertTrue(self.txn.began)
@@ -352,19 +353,6 @@ class Test_create_tm(unittest.TestCase):
         self.request.environ['tm.manager'] = tm
         self.assertTrue(self._callFUT() is tm)
 
-def veto_true(request, response):
-    return True
-
-def veto_false(request, response):
-    return False
-
-def activate_true(request):
-    return True
-
-def activate_false(request):
-    return False
-
-create_manager = None
 
 class Test_includeme(unittest.TestCase):
     def test_it(self):
@@ -393,7 +381,7 @@ class Test_includeme(unittest.TestCase):
         from pyramid_tm import includeme
         config = DummyConfig()
         config.registry.settings["tm.manager_hook"] = \
-            "pyramid_tm.tests.create_manager"
+            "tests.create_manager"
         includeme(config)
         config.actions[0][1]()
         self.assertTrue(
@@ -443,7 +431,7 @@ class TestIntegration(unittest.TestCase):
 
     def _makeApp(self):
         app = self.config.make_wsgi_app()
-        return TestApp(app)
+        return webtest.TestApp(app)
 
     def test_it(self):
         config = self.config
@@ -528,7 +516,7 @@ class TestIntegration(unittest.TestCase):
         from transaction.interfaces import NoTransaction
         config = self.config
         config.add_settings({'tm.manager_hook': 'pyramid_tm.explicit_manager'})
-        config.add_tween('pyramid_tm.tests.dummy_tween_factory',
+        config.add_tween('tests.dummy_tween_factory',
                          over='pyramid_tm.tm_tween_factory')
         dm = DummyDataManager()
         def dummy_handler(handler, request):
@@ -542,7 +530,7 @@ class TestIntegration(unittest.TestCase):
         from transaction.interfaces import NoTransaction
         config = self.config
         config.add_settings({'tm.manager_hook': 'pyramid_tm.explicit_manager'})
-        config.add_tween('pyramid_tm.tests.dummy_tween_factory',
+        config.add_tween('tests.dummy_tween_factory',
                          over='pyramid_tm.tm_tween_factory')
         dm = DummyDataManager()
         def dummy_handler(handler, request):
@@ -777,8 +765,4 @@ class DummyConfig(object):
     def action(self, x, fun, order=None):
         self.actions.append((x, fun, order))
 
-def dummy_tween_factory(handler, registry):
-    def dummy_tween(request):
-        dummy_handler = registry['dummy_handler']
-        return dummy_handler(handler, request)
-    return dummy_tween
+
