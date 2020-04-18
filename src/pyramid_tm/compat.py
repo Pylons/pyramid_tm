@@ -17,12 +17,14 @@ if PY2:
             _locs_ = _globs_
         exec("""exec _code_ in _globs_, _locs_""")
 
-    exec_("""def reraise(tp, value, tb=None):
+    exec_(
+        """def reraise(tp, value, tb=None):
     try:
         raise tp, value, tb
     finally:
         tb = None
-""")
+"""
+    )
 
 else:
     text_type = str
@@ -37,6 +39,7 @@ else:
         finally:
             value = None
             tb = None
+
 
 def text_(s):
     if isinstance(s, bytes):

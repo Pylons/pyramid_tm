@@ -1,6 +1,13 @@
 Changes
 -------
 
+Unreleased
+^^^^^^^^^^
+
+- Drop Python 3.4 support
+
+- Add support for Python 3.8
+
 2.4 (2020-01-06)
 ^^^^^^^^^^^^^^^^
 

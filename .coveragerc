@@ -1,0 +1,15 @@
+[run]
+parallel = true
+source =
+    pyramid_tm
+
+[paths]
+source =
+    src/pyramid_tm
+    */src/pyramid_tm
+    */site-packages/pyramid_tm
+
+[report]
+show_missing = true
+precision = 2
+
