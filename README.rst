@@ -1,14 +1,8 @@
 ``pyramid_tm``
 ==============
 
-.. image:: https://github.com/Pylons/pyramid_tm/workflows/Build/test%20on%20Linux/badge.svg?branch=master
-    :target: https://github.com/Pylons/pyramid_tm/actions?query=workflow%3A%22Build%2Ftest+on+Linux%22
-
-.. image:: https://github.com/Pylons/pyramid_tm/workflows/Build/test%20on%20MacOS/badge.svg?branch=master
-    :target: https://github.com/Pylons/pyramid_tm/actions?query=workflow%3A%22Build%2Ftest+on+MacOS%22
-
-.. image:: https://github.com/Pylons/pyramid_tm/workflows/Build/test%20on%20Windows/badge.svg?branch=master
-    :target: https://github.com/Pylons/pyramid_tm/actions?query=workflow%3A%22Build%2Ftest+on+Windows%22
+.. image:: https://github.com/Pylons/pyramid_tm/workflows/Build%20and%20test/badge.svg
+    :target: https://github.com/Pylons/pyramid_tm/actions?query=workflow%3A%22Build+and+test%22
 
 .. image:: https://readthedocs.org/projects/pyramid-tm/badge/?version=latest
         :target: https://docs.pylonsproject.org/projects/pyramid-tm/en/latest/
