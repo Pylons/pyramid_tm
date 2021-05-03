@@ -45,7 +45,7 @@ def default_commit_veto(request, response):
 
 
 class AbortWithResponse(Exception):
-    """ Abort the transaction but return a pre-baked response."""
+    """Abort the transaction but return a pre-baked response."""
 
     def __init__(self, response):
         self.response = response
