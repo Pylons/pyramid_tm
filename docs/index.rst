@@ -10,7 +10,7 @@ Overview
 the active :term:`transaction` as provided by the Python `transaction 
 <https://pypi.org/project/transaction/>`_ package. (See the `documentation
 for the transaction package 
-<https://zodb.readthedocs.io/en/latest/transactions.html>`_ for an
+<https://transaction.readthedocs.io/en/latest/>`_ for an
 explanation of what "joining the active transaction" means).
 
 Installation
