@@ -21,7 +21,7 @@ jobs:
                     - "3.7"
                     - "3.8"
                     - "3.9"
-                    - "pypy3"
+                    - "pypy-3.7"
                 os:
                     - "ubuntu-latest"
                     - "windows-latest"
@@ -36,9 +36,6 @@ jobs:
                       architecture: x86
                     - os: "macos-latest"
                       architecture: x86
-                    # Building on PyPy3 on Windows is broken
-                    - os: "windows-latest"
-                      py: "pypy3"
 
         name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
         runs-on: ${{ matrix.os }}
