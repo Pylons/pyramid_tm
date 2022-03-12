@@ -1,9 +1,8 @@
-import sys
-from pyramid.exceptions import ConfigurationError
-from pyramid.exceptions import NotFound
+from pyramid.exceptions import ConfigurationError, NotFound
 from pyramid.settings import asbool
 from pyramid.tweens import EXCVIEW
 from pyramid.util import DottedNameResolver
+import sys
 import transaction
 import warnings
 import zope.interface

@@ -1,9 +1,10 @@
 import functools
-import unittest
+from pyramid import testing
 import transaction
 from transaction import TransactionManager
-from pyramid import testing
+import unittest
 import webtest
+
 from tests import activate_false, create_manager, dummy_tween_factory
 
 
