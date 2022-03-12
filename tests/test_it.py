@@ -374,7 +374,8 @@ class Test_create_tm(unittest.TestCase):
 class Test_includeme(unittest.TestCase):
     def test_it(self):
         from pyramid.tweens import EXCVIEW
-        from pyramid_tm import includeme, create_tm, TMActivePredicate
+
+        from pyramid_tm import TMActivePredicate, create_tm, includeme
 
         config = DummyConfig()
         includeme(config)
