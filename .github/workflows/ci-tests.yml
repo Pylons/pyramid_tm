@@ -58,7 +58,7 @@ jobs:
                   architecture: x64
 
             - run: pip install tox
-            - run: tox -e py310,coverage
+            - run: tox -e py310-pyramid20,coverage
     docs:
         runs-on: ubuntu-latest
         name: Build the documentation
