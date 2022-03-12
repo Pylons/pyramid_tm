@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import functools
 import unittest
 import transaction
@@ -148,26 +146,26 @@ class Test_tm_tween_factory(unittest.TestCase):
     def test_handler_w_native_authenticated_userid(self):
         self.config.testing_securitypolicy(userid='phred')
         self._callFUT()
-        self.assertEqual(self.txn.user, u'phred')
+        self.assertEqual(self.txn.user, 'phred')
 
     def test_handler_w_utf8_authenticated_userid(self):
         USERID = b'phred/\xd1\x80\xd0\xb5\xd1\x81'.decode('utf-8')
         self.config.testing_securitypolicy(userid=USERID)
         self._callFUT()
-        self.assertEqual(self.txn.user, u'phred/рес')
+        self.assertEqual(self.txn.user, 'phred/рес')
 
     def test_handler_w_latin1_authenticated_userid(self):
         USERID = b'\xc4\xd6\xdc'
         self.config.testing_securitypolicy(userid=USERID)
         self._callFUT()
-        self.assertEqual(self.txn.user, u'ÄÖÜ')
+        self.assertEqual(self.txn.user, r"b'\xc4\xd6\xdc'")
 
     def test_handler_w_integer_authenticated_userid(self):
         # See https://github.com/Pylons/pyramid_tm/issues/28
         USERID = 1234
         self.config.testing_securitypolicy(userid=USERID)
         self._callFUT()
-        self.assertEqual(self.txn.user, u'1234')
+        self.assertEqual(self.txn.user, '1234')
 
     def test_disables_user_annotation(self):
         self.config.testing_securitypolicy(userid="nope")
@@ -193,7 +191,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         request = DummierRequest()
 
         self._callFUT(request=request)
-        self.assertEqual(self.txn._note, u'Unable to decode path as unicode')
+        self.assertEqual(self.txn._note, 'Unable to decode path as unicode')
         self.assertEqual(self.txn.user, None)
 
     def test_handler_notes_unicode_path(self):
@@ -208,13 +206,13 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        self.assertEqual(self.txn._note, u'collection/рес')
+        self.assertEqual(self.txn._note, 'collection/рес')
         self.assertEqual(self.txn.user, None)
 
     def test_handler_notes_native_str_path(self):
         class DummierRequest(DummyRequest):
             def _get_path_info(self):
-                return u'some/resource'
+                return 'some/resource'
 
             def _set_path_info(self, val):
                 pass
@@ -223,7 +221,7 @@ class Test_tm_tween_factory(unittest.TestCase):
 
         request = DummierRequest()
         self._callFUT(request=request)
-        self.assertEqual(self.txn._note, u'some/resource')
+        self.assertEqual(self.txn._note, 'some/resource')
         self.assertEqual(self.txn.user, None)
 
     def test_active_flag_set_during_handler(self):

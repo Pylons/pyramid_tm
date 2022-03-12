@@ -15,13 +15,11 @@ jobs:
         strategy:
             matrix:
                 py:
-                    - "2.7"
-                    - "3.5"
-                    - "3.6"
                     - "3.7"
                     - "3.8"
                     - "3.9"
-                    - "pypy-3.7"
+                    - "3.10"
+                    - "pypy-3.8"
                 os:
                     - "ubuntu-latest"
                     - "windows-latest"
@@ -53,20 +51,14 @@ jobs:
         runs-on: ubuntu-latest
         name: Validate coverage
         steps:
-            - uses: actions/checkout@v2
-            - name: Setup python 2.7
+            - name: Setup python
               uses: actions/setup-python@v2
               with:
-                  python-version: 2.7
-                  architecture: x64
-            - name: Setup python 3.9
-              uses: actions/setup-python@v2
-              with:
-                  python-version: 3.9
+                  python-version: "3.10"
                   architecture: x64
 
             - run: pip install tox
-            - run: tox -e py38-pyramid110,py27,coverage
+            - run: tox -e py310,coverage
     docs:
         runs-on: ubuntu-latest
         name: Build the documentation
@@ -75,7 +67,7 @@ jobs:
             - name: Setup python
               uses: actions/setup-python@v2
               with:
-                  python-version: 3.9
+                  python-version: "3.10"
                   architecture: x64
             - run: pip install tox
             - run: tox -e docs
@@ -87,7 +79,7 @@ jobs:
             - name: Setup python
               uses: actions/setup-python@v2
               with:
-                  python-version: 3.9
+                  python-version: "3.10"
                   architecture: x64
             - run: pip install tox
             - run: tox -e lint

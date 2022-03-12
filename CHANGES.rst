@@ -4,9 +4,11 @@ Changes
 Unreleased
 ^^^^^^^^^^
 
-- Drop Python 3.4 support
+- Drop support for Python 2.7, 3.4, 3.5, and 3.6.
 
-- Add support for Python 3.8
+- Add support for Python 3.8, 3.9, and 3.10.
+
+- Blackify project source.
 
 2.4 (2020-01-06)
 ^^^^^^^^^^^^^^^^
