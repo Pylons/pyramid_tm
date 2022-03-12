@@ -1,9 +1,8 @@
-import sys
-from pyramid.exceptions import ConfigurationError
-from pyramid.exceptions import NotFound
+from pyramid.exceptions import ConfigurationError, NotFound
 from pyramid.settings import asbool
 from pyramid.tweens import EXCVIEW
 from pyramid.util import DottedNameResolver
+import sys
 import transaction
 import warnings
 import zope.interface
@@ -19,9 +18,6 @@ except ImportError:  # pragma: no cover
     mark_error_retryable = lambda error: None
 
 mark_error_retryable(transaction.interfaces.TransientError)
-
-from .compat import reraise
-from .compat import text_
 
 resolver = DottedNameResolver(None)
 
@@ -103,7 +99,7 @@ def tm_tween_factory(handler, registry):
                 # since the manager has cleared its list of data mangers at
                 # this point
                 maybe_tag_retryable(request, exc_info)
-                reraise(*exc_info)
+                raise exc_info[1] from None
 
             finally:
                 del exc_info  # avoid leak
@@ -140,11 +136,11 @@ def tm_tween_factory(handler, registry):
             if annotate_user:
                 userid = request.authenticated_userid
                 if userid:
-                    t.user = text_(userid)
+                    t.user = str(userid)
             try:
-                t.note(text_(request.path_info))
+                t.note(request.path_info)
             except UnicodeDecodeError:
-                t.note(text_("Unable to decode path as unicode"))
+                t.note("Unable to decode path as unicode")
 
             response = handler(request)
             if manager.isDoomed():
@@ -169,22 +165,17 @@ def tm_tween_factory(handler, registry):
 
         # an unhandled exception was propagated - we should abort the
         # transaction and re-raise the original exception
-        except Exception:
-            exc_info = sys.exc_info()
-            try:
-                # try to tag the original exception as retryable before
-                # aborting the transaction because after abort it may not
-                # be possible to determine if the exception is retryable
-                # because the bound data managers are cleared
-                maybe_tag_retryable(request, exc_info)
+        except Exception as exc:
+            # try to tag the original exception as retryable before
+            # aborting the transaction because after abort it may not
+            # be possible to determine if the exception is retryable
+            # because the bound data managers are cleared
+            maybe_tag_retryable(request, sys.exc_info())
 
-                exc_response = _finish(request, manager.abort)
-                if exc_response is not None:
-                    return exc_response
-                reraise(*exc_info)
-
-            finally:
-                del exc_info  # avoid leak
+            exc_response = _finish(request, manager.abort)
+            if exc_response is not None:
+                return exc_response
+            raise exc from None
 
     return tm_tween
 
