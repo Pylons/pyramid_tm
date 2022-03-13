@@ -455,6 +455,7 @@ More Information
 
    api.rst
    glossary.rst
+   changes.rst
 
 Reporting Bugs / Development Versions
 -------------------------------------
@@ -463,9 +464,6 @@ Visit https://github.com/Pylons/pyramid_tm to download development or
 tagged versions.
 
 Visit https://github.com/Pylons/pyramid_tm/issues to report bugs.
-
-
-.. include:: ../CHANGES.rst
 
 Indices and tables
 ------------------
