@@ -57,7 +57,7 @@ using the ``request.tm.begin()`` function.  Once the request has
 finished all of its works (ie views have finished running), a few checks
 are tested:
 
-  1) Did some a transaction.doom() cause the transaction to become "doomed"?
+  1) Did a transaction.doom() cause the transaction to become "doomed"?
      if so, ``request.tm.abort()``.
 
   2) Did an exception occur in the underlying code? if so,
