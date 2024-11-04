@@ -149,13 +149,14 @@ def tm_tween_factory(handler, registry):
             if commit_veto is not None:
                 if commit_veto(request, response):
                     raise AbortWithResponse(response)
-            else:
-                # check for a squashed exception and handle it
-                # this would happen if an exception view was invoked and
-                # rendered an error response
-                exc_info = getattr(request, 'exc_info', None)
-                if exc_info is not None:
-                    maybe_tag_retryable(request, exc_info)
+
+            # check for a squashed exception and handle it
+            # this would happen if an exception view was invoked and
+            # rendered an error response
+            exc_info = getattr(request, 'exc_info', None)
+            if exc_info is not None:
+                maybe_tag_retryable(request, exc_info)
+                if commit_veto is None:
                     raise AbortWithResponse(response)
 
             return _finish(request, manager.commit, response)

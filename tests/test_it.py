@@ -505,6 +505,50 @@ class TestIntegration(unittest.TestCase):
         self.assertEqual(calls, ['fail', 'ok'])
         self.assertEqual(result.body, b'ok')
 
+    @skip_if_missing('pyramid_retry')
+    def test_error_is_retried_with_commit_veto_and_error_view_and_retry_data_manager(
+        self,
+    ):
+        class Conflict(Exception):
+            """This is not a Transient error."""
+
+        class RetryDataManager(DummyDataManager):
+            """The datamanager wants the Conflict to be retried."""
+
+            def should_retry(self, exception):
+                return isinstance(exception, Conflict)
+
+        def exc_view(request):
+            return 'failure'
+
+        config = self.config
+        config.add_settings(
+            {
+                'retry.attempts': 2,
+                'tm.commit_veto': lambda request, response: False,
+            }
+        )
+        config.include('pyramid_retry')
+        config.add_view(exc_view, context=Exception, renderer='string')
+
+        calls = []
+
+        def view(request):
+            print(calls)
+            dm = RetryDataManager()
+            dm.bind(request.tm)
+            if len(calls) < 1:
+                calls.append('fail')
+                raise Conflict
+            calls.append('ok')
+            return 'ok'
+
+        config.add_view(view, renderer='string')
+        app = self._makeApp()
+        result = app.get('/')
+        self.assertEqual(calls, ['fail', 'ok'])
+        self.assertEqual(result.body, b'ok')
+
     def test_unhandled_error_aborts(self):
         config = self.config
         dm = DummyDataManager()
