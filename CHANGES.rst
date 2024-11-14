@@ -4,6 +4,10 @@ Changes
 Unreleased (2022-11-14)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+- Drop support for Python 3.7, and 3.8.
+
+- Add support for Python 3.11, 3.12, and 3.13.
+
 - rename "master" to "main"
 
 - Fix retrying transactions with `pyramid_retry` when using veto and a datamanger
