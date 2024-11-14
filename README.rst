@@ -1,8 +1,10 @@
 ``pyramid_tm``
 ==============
 
-.. image:: https://github.com/Pylons/pyramid_tm/actions/workflows/ci-tests.yml/badge.svg
-    :target: https://github.com/Pylons/pyramid_tm/actions/workflows/ci-tests.yml
+.. image:: https://github.com/Pylons/pyramid_tm/actions/workflows/ci-tests.yml/badge.svg?branch=main
+    :target: https://github.com/Pylons/pyramid_tm/actions/workflows/ci-tests.yml?query=branch%3Amain
+    :alt: main CI Status
+
 
 .. image:: https://readthedocs.org/projects/pyramid-tm/badge/?version=latest
         :target: https://docs.pylonsproject.org/projects/pyramid-tm/en/latest/
