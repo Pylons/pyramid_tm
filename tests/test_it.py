@@ -135,6 +135,7 @@ class Test_tm_tween_factory(unittest.TestCase):
         def handler(request, count=count):
             raise Conflict
 
+        self.txn.retryable = True
         self.assertRaises(Conflict, self._callFUT, handler=handler)
 
     def test_handler_isdoomed(self):
@@ -746,6 +747,9 @@ class DummyTransaction(TransactionManager):
         self.retryable = retryable
         self.active = False
         self.finish_with_exc = finish_with_exc
+
+    def isRetryableError(self, exc):
+        return self._retryable(type(exc), exc)
 
     def _retryable(self, t, v):
         if self.active:
