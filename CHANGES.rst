@@ -1,7 +1,7 @@
 Changes
 -------
 
-Unreleased (2022-11-14)
+Unreleased (2024-11-14)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 - Drop support for Python 3.7, and 3.8.
