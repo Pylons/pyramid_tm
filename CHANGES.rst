@@ -10,6 +10,9 @@ Unreleased (2024-11-14)
 
 - rename "master" to "main"
 
+- Fix retrying transactions with `pyramid_retry` when using veto and a datamanger
+  marks the exception as retryable.
+
 2.5 (2022-03-12)
 ^^^^^^^^^^^^^^^^
 
