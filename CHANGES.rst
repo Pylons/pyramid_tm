@@ -4,6 +4,10 @@ Changes
 Unreleased (2022-11-14)
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+- Drop support for Python 3.7, and 3.8.
+
+- Add support for Python 3.11, 3.12, and 3.13.
+
 - rename "master" to "main"
 
 2.5 (2022-03-12)
