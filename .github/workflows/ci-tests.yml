@@ -36,6 +36,9 @@ jobs:
                     - py: "pypy-3.10"
                       toxenv: "pypy310"
                 exclude:
+                    # Ubuntu does not have arm64 releases
+                    - os: "ubuntu-22.04"
+                      architecture: arm64
                     # MacOS we need to make sure to remove x86 on all
                     # We need to run no arm64 on macos-13 (Intel), but some
                     # Python versions: 3.9/3.10
@@ -53,8 +56,6 @@ jobs:
                     # Windows does not have arm64 releases
                     - os: "windows-latest"
                       architecture: arm64
-
-
         name: "Python: ${{ matrix.py }}-${{ matrix.architecture }} on ${{ matrix.os }}"
         runs-on: ${{ matrix.os }}
         steps:
@@ -65,8 +66,15 @@ jobs:
                   python-version: ${{ matrix.py }}
                   architecture: ${{ matrix.architecture }}
             - run: pip install tox
-            - name: Running tox
+            - name: Running tox with specific toxenv
+              if: ${{ matrix.toxenv != '' }}
+              env:
+                TOXENV: ${{ matrix.toxenv }}
+              run: tox
+            - name: Running tox for current python version
+              if: ${{ matrix.toxenv == '' }}
               run: tox -e py
+
     coverage:
         runs-on: ubuntu-latest
         name: Validate coverage
