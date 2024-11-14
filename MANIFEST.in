@@ -4,7 +4,6 @@ graft docs
 graft .github
 
 include README.rst
-include CHANGES.txt
 include LICENSE.txt
 include CONTRIBUTORS.txt
 include COPYRIGHT.txt
