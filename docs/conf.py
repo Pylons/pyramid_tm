@@ -18,7 +18,7 @@
 #sys.path.append(os.path.abspath('some/directory'))
 
 import datetime
-import pkg_resources
+import importlib.metadata
 import pylons_sphinx_themes
 
 html_theme_path = pylons_sphinx_themes.get_html_themes_path()
@@ -58,7 +58,7 @@ project = 'pyramid_tm'
 # other places throughout the built documents.
 #
 # The short X.Y version.
-version = pkg_resources.get_distribution('pyramid_tm').version
+version = importlib.metadata.version('pyramid_tm')
 # The full version, including alpha/beta/rc tags.
 release = version
 

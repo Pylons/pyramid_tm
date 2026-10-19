@@ -436,11 +436,12 @@ def skip_if_missing(module):  # pragma: no cover
 
 
 def skip_if_package_lt(pkg, version):  # pragma: no cover
-    import pkg_resources
+    import importlib.metadata
+    from packaging.version import Version
 
     def wrapper(fn):
-        dist = pkg_resources.get_distribution(pkg)
-        if dist.parsed_version < pkg_resources.parse_version(version):
+        dist_version = importlib.metadata.version(pkg)
+        if Version(dist_version) < Version(version):
             return
 
         @functools.wraps(fn)
