@@ -12,6 +12,11 @@ unreleased
   `pyramid.path.DottedNameResolver`.
   See https://github.com/Pylons/pyramid_tm/pull/95
 
+- Switch packaging metadata from ``setup.cfg`` to ``pyproject.toml`` and use
+  an SPDX license expression. The ``testing`` and ``docs`` extras are replaced
+  by dependency groups.
+  See https://github.com/Pylons/pyramid_tm/pull/96
+
 2.6 (2024-11-14)
 ^^^^^^^^^^^^^^^^
 
