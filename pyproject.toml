@@ -1,6 +1,85 @@
 [build-system]
-requires = ["setuptools >= 41", "wheel"]
+requires = ["setuptools >= 77"]  # SPDX license expressions
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+readme = {file = ["README.rst", "CHANGES.rst"], content-type = "text/x-rst"}
+
+[project]
+name = "pyramid_tm"
+version = "2.6"
+description = "A package which allows Pyramid requests to join the active transaction"
+dynamic = ["readme"]
+
+authors = [
+  {name = "Rocky Burt, Chris McDonough", email = "pylons-discuss@googlegroups.com"},
+]
+maintainers = [
+  {name = "Pylons Project", email = "pylons-discuss@googlegroups.com"},
+]
+license = "LicenseRef-Repoze-BSD-derived"
+license-files = ["LICENSE.txt"]
+
+requires-python = ">=3.11"
+dependencies = [
+    "pyramid >= 1.5",
+    "transaction >= 2.0",
+]
+
+keywords = ["wsgi", "pylons", "pyramid", "transaction"]
+classifiers = [
+    "Development Status :: 6 - Mature",
+    "Framework :: Pyramid",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/Pylons/pyramid_tm"
+Documentation = "https://docs.pylonsproject.org/projects/pyramid-tm/en/latest/index.html"
+Changelog = "https://docs.pylonsproject.org/projects/pyramid-tm/en/latest/changes.html"
+"Issue Tracker" = "https://github.com/Pylons/pyramid_tm/issues"
+
+[dependency-groups]
+docs = [
+    "Sphinx >= 1.8.1",
+    "pylons-sphinx-themes >= 1.0.9",
+]
+testing = [
+    "WebTest",
+    "pytest",
+    "pytest-cov",
+    "coverage >= 5.0",
+]
+lint = [
+    "black ~= 26.10.0",
+    "isort",
+    "flake8",
+    "flake8-bugbear",
+    "build",
+    "check-manifest",
+    "readme_renderer",
+    "twine",
+]
+
+[tool.pytest.ini_options]
+python_files = "test_*.py"
+testpaths = [
+    "tests",
+]
+addopts = "-W always"
 
 [tool.black]
 line-length = 79
