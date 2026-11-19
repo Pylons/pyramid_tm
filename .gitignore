@@ -7,3 +7,4 @@ env*/
 dist/
 build/
 coverage.xml
+uv.lock
