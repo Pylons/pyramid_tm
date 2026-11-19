@@ -8,6 +8,10 @@ unreleased
 
 - Add support for Python 3.14 and 3.15.
 
+- Avoid deprecation warnings by using the public api for
+  `pyramid.path.DottedNameResolver`.
+  See https://github.com/Pylons/pyramid_tm/pull/95
+
 2.6 (2024-11-14)
 ^^^^^^^^^^^^^^^^
 
