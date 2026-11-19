@@ -1,7 +1,7 @@
 from pyramid.exceptions import ConfigurationError, NotFound
+from pyramid.path import DottedNameResolver
 from pyramid.settings import asbool
 from pyramid.tweens import EXCVIEW
-from pyramid.util import DottedNameResolver
 import sys
 import transaction
 import warnings
