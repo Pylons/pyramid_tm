@@ -1,8 +1,8 @@
 Changes
 -------
 
-unreleased
-^^^^^^^^^^
+2.7 (2026-11-20)
+^^^^^^^^^^^^^^^^
 
 - Drop support for Python 3.9 and 3.10.
 

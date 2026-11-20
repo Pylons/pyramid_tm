@@ -1,6 +1,6 @@
 [project]
 name = "pyramid_tm"
-version = "2.6"
+version = "2.7"
 description = "A package which allows Pyramid requests to join the active transaction"
 dynamic = ["readme"]
 
