@@ -7,7 +7,7 @@
 
 
 .. image:: https://readthedocs.org/projects/pyramid-tm/badge/?version=latest
-        :target: https://docs.pylonsproject.org/projects/pyramid-tm/en/latest/
+        :target: https://docs.pylonsproject.org/projects/pyramid_tm/en/latest/
         :alt: Documentation Status
 
 ``pyramid_tm`` is a package which allows Pyramid requests to join

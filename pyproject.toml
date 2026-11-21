@@ -37,8 +37,8 @@ classifiers = [
 ]
 
 [project.urls]
-Changelog = "https://docs.pylonsproject.org/projects/pyramid-tm/en/latest/changes.html"
-Documentation = "https://docs.pylonsproject.org/projects/pyramid-tm/en/latest/index.html"
+Changelog = "https://docs.pylonsproject.org/projects/pyramid_tm/en/latest/changes.html"
+Documentation = "https://docs.pylonsproject.org/projects/pyramid_tm/en/latest/index.html"
 Homepage = "https://github.com/Pylons/pyramid_tm"
 "Issue Tracker" = "https://github.com/Pylons/pyramid_tm/issues"
 
