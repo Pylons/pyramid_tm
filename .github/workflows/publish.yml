@@ -54,3 +54,25 @@ jobs:
             - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
               with:
                   packages-dir: dist/
+
+    create-release:
+        # Only after PyPI accepted the upload, so an unapproved publish
+        # never leaves a GitHub release behind.
+        needs: [build, publish-pypi]
+        runs-on: ubuntu-24.04
+        permissions:
+            contents: write
+        steps:
+            - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+              with:
+                  artifact-ids: ${{ needs.build.outputs.artifact-id }}
+                  path: dist/
+            - name: Create GitHub release
+              run: >-
+                  gh release create "$GITHUB_REF_NAME" dist/*
+                  --repo "$GITHUB_REPOSITORY"
+                  --title "$GITHUB_REF_NAME"
+                  --verify-tag
+                  --notes "https://docs.pylonsproject.org/projects/pyramid_tm/en/latest/changes.html"
+              env:
+                  GH_TOKEN: ${{ github.token }}
