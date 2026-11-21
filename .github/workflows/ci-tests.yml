@@ -44,7 +44,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Setup uv
-              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
               with:
                   python-version: ${{ matrix.py }}
             - name: Running tox for current python version
@@ -67,7 +67,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Setup uv
-              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
               with:
                   python-version: ${{ matrix.py }}
             - run: uvx --with tox-uv tox -e ${{ matrix.toxenv }}
@@ -80,7 +80,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Setup uv
-              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
               with:
                   python-version: "3.14"
             - run: uvx --with tox-uv tox -e py314-cover,coverage
@@ -92,7 +92,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Setup uv
-              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
               with:
                   python-version: "3.14"
             - run: uvx --with tox-uv tox -e docs
@@ -104,7 +104,7 @@ jobs:
               with:
                   persist-credentials: false
             - name: Setup uv
-              uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+              uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
               with:
                   python-version: "3.14"
             - run: uvx --with tox-uv tox -e lint
