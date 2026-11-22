@@ -68,11 +68,14 @@ jobs:
                   artifact-ids: ${{ needs.build.outputs.artifact-id }}
                   path: dist/
             - name: Create GitHub release
-              run: >-
-                  gh release create "$GITHUB_REF_NAME" dist/*
-                  --repo "$GITHUB_REPOSITORY"
-                  --title "$GITHUB_REF_NAME"
-                  --verify-tag
-                  --notes "https://docs.pylonsproject.org/projects/pyramid_tm/en/latest/changes.html"
+              run: |
+                  # Use the Changelog URL from the published wheel's metadata (pyproject.toml [project.urls]).
+                  changelog=$(unzip -p dist/*.whl '*.dist-info/METADATA' | sed -n 's/^Project-URL: Changelog, //p')
+                  test -n "$changelog" || { echo "No Changelog URL in wheel metadata" >&2; exit 1; }
+                  gh release create "$GITHUB_REF_NAME" dist/* \
+                      --repo "$GITHUB_REPOSITORY" \
+                      --title "$GITHUB_REF_NAME" \
+                      --verify-tag \
+                      --notes "$changelog"
               env:
                   GH_TOKEN: ${{ github.token }}
