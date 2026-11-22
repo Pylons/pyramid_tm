@@ -168,7 +168,7 @@ transaction is expected to be aborted upon any failures.
 Retries
 -------
 
-``pyramid_tm`` ships with support for `pyramid_retry <https://docs.pylonsproject.org/projects/pyramid-retry/en/latest/>`_ which is an
+``pyramid_tm`` ships with support for `pyramid_retry <https://docs.pylonsproject.org/projects/pyramid_retry/en/latest/>`_ which is an
 execution policy that will retry requests when they fail with exceptions
 marked as retryable. By default, retrying is turned off. In order to turn it
 on you must update your app's configuration:
@@ -196,7 +196,7 @@ certain exceptions raised by various data managers, such as
 where the exception's code is 8877.  Any exception which inherits from
 ``transaction.interfaces.TransientError`` will be marked as retryable.
 
-Read more about retrying requests in the `pyramid_retry documentation <https://docs.pylonsproject.org/projects/pyramid-retry/en/latest/>`_.
+Read more about retrying requests in the `pyramid_retry documentation <https://docs.pylonsproject.org/projects/pyramid_retry/en/latest/>`_.
 
 Custom Transaction Managers
 ---------------------------
