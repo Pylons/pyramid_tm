@@ -30,6 +30,17 @@ jobs:
                   enable-cache: false
             - run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> "$GITHUB_ENV"
             - run: uvx --with tox-uv tox -e build
+            - name: Verify tag matches package version
+              run: |
+                  # PyPI takes the version from each file's metadata, so check both against the tag.
+                  wheel=$(unzip -p dist/*.whl '*.dist-info/METADATA' | sed -n '1,/^$/s/^Version: //p')
+                  sdist=$(tar -xzOf dist/*.tar.gz --wildcards --no-wildcards-match-slash '*/PKG-INFO' | sed -n '1,/^$/s/^Version: //p')
+                  for version in "$wheel" "$sdist"; do
+                      if [ "$version" != "$GITHUB_REF_NAME" ]; then
+                          echo "::error::Tag '$GITHUB_REF_NAME' does not match package version (wheel '$wheel', sdist '$sdist')"
+                          exit 1
+                      fi
+                  done
             - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
               id: upload-artifact
               with:
