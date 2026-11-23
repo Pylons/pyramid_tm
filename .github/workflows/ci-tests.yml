@@ -52,12 +52,12 @@ jobs:
         strategy:
             matrix:
                 include:
+                    # oldest supported pyramid, also covers the pre-1.7 path without invoke_exception_view
                     - py: "3.11"
                       toxenv: "py311-pyramid15"
+                    # last 1.x release, before 2.0 removed deprecated apis
                     - py: "3.11"
                       toxenv: "py311-pyramid110"
-                    - py: "3.15"
-                      toxenv: "py315-pyramid20"
         name: "Pyramid: ${{ matrix.toxenv }}"
         runs-on: ubuntu-24.04
         steps:
