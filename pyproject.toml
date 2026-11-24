@@ -101,6 +101,21 @@ testpaths = [
   "tests",
 ]
 
+[tool.coverage.run]
+parallel = true
+source = ["pyramid_tm"]
+
+[tool.coverage.paths]
+source = [
+  "src/pyramid_tm",
+  "*/src/pyramid_tm",
+  "*/site-packages/pyramid_tm",
+]
+
+[tool.coverage.report]
+show_missing = true
+precision = 2
+
 [tool.setuptools.packages.find]
 where = ["src"]
 

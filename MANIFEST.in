@@ -10,7 +10,7 @@ include COPYRIGHT.txt
 include CHANGES.rst
 
 include pyproject.toml
-include .coveragerc .flake8
+include .flake8
 include .mailmap
 include tox.ini .readthedocs.yaml
 
